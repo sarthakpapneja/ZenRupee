@@ -997,7 +997,7 @@ def api_account_qr(account_id):
 if __name__ == "__main__":
     db_manager.init_all_databases()
     print("\n  Apex Trust Bank — Web Server")
-    print("  http://localhost:5001\n")
-    app.run(debug=True, port=5001)
+    print("  http://localhost:5005\n")
+    app.run(debug=True, port=5005)
 
 

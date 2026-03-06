@@ -95,7 +95,7 @@ python3 seed_data.py
 ```bash
 # 🌐 Web UI (recommended)
 python3 server.py
-# Open http://localhost:5001
+# Open http://localhost:5005
 
 # 💻 CLI version
 python3 main.py
