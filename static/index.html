@@ -4,11 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bank Security System</title>
-    <meta name="description" content="Secure bank management system with role-based access control">
+    <title>Apex Trust Bank</title>
+    <meta name="description" content="Apex Trust Bank — Secure banking management with role-based access control">
     <link rel="stylesheet" href="/static/style.css">
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏦</text></svg>">
+    <link rel="icon" type="image/png" href="/static/logo.png">
 </head>
 
 <body>
@@ -21,9 +20,9 @@
         <div class="login-container">
             <div class="login-card">
                 <div class="login-logo">
-                    <span class="icon">🏦</span>
-                    <h1>Bank Security System</h1>
-                    <p>Secure · Reliable · Role-Based Access</p>
+                    <img src="/static/logo.png" alt="Apex Trust Bank" class="login-logo-img">
+                    <h1>Apex Trust Bank</h1>
+                    <p>Secure · Reliable · Trusted</p>
                 </div>
 
                 <div class="login-error" id="loginError"></div>
@@ -40,15 +39,15 @@
                             autocomplete="current-password">
                     </div>
                     <button type="submit" class="btn btn-primary" id="loginBtn">
-                        🔐 Sign In
+                        Sign In
                     </button>
                 </form>
 
                 <div class="login-demo">
-                    Quick login:
-                    <span onclick="quickLogin('john_doe','password123')">👤 Customer (john_doe)</span>
-                    <span onclick="quickLogin('acc_smith','password123')">📋 Accountant (acc_smith)</span>
-                    <span onclick="quickLogin('mgr_admin','admin123')">👑 Manager (mgr_admin)</span>
+                    Demo login:
+                    <span onclick="quickLogin('john_doe','password123')">Customer (john_doe)</span>
+                    <span onclick="quickLogin('acc_smith','password123')">Accountant (acc_smith)</span>
+                    <span onclick="quickLogin('mgr_admin','admin123')">Manager (mgr_admin)</span>
                 </div>
             </div>
         </div>
@@ -59,7 +58,7 @@
         <!-- Topbar -->
         <div class="topbar">
             <div class="topbar-left">
-                <span class="logo">🏦 Bank Security</span>
+                <img src="/static/logo.png" alt="Logo" class="topbar-logo-img"><span class="logo">Apex Trust Bank</span>
             </div>
             <div class="topbar-right">
                 <div class="user-badge" id="userBadge">
@@ -181,44 +180,62 @@
         }
 
         // ── Navigation Configs ──
+        // Inline SVG icons for sidebar
+        const ICONS = {
+            overview: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
+            accounts: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>',
+            deposit: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>',
+            withdraw: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',
+            transfer: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M7 17l-4-4h18M17 7l4 4H3"/></svg>',
+            profile: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>',
+            password: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 118 0v4"/></svg>',
+            report: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 20h18M6 16v-4M10 16V8M14 16v-6M18 16V4"/></svg>',
+            users: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><path d="M2 20c0-4 3-6 7-6s7 2 7 6"/><circle cx="17" cy="8" r="2.5"/><path d="M22 20c0-3-2-5-5-5"/></svg>',
+            branches: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>',
+            requests: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>',
+            txns: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h4"/></svg>',
+            syslog: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 8l4 4-4 4"/><path d="M12 20h9"/></svg>',
+            audit: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>',
+            createacc: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
+        };
         const NAV = {
             customer: [
-                { id: 'overview', icon: '📊', label: 'Overview' },
-                { id: 'accounts', icon: '💳', label: 'My Accounts' },
-                { id: 'deposit', icon: '💵', label: 'Deposit' },
-                { id: 'withdraw', icon: '🏧', label: 'Withdraw' },
-                { id: 'transfer', icon: '🔄', label: 'Transfer' },
+                { id: 'overview', icon: ICONS.overview, label: 'Overview' },
+                { id: 'accounts', icon: ICONS.accounts, label: 'My Accounts' },
+                { id: 'deposit', icon: ICONS.deposit, label: 'Deposit' },
+                { id: 'withdraw', icon: ICONS.withdraw, label: 'Withdraw' },
+                { id: 'transfer', icon: ICONS.transfer, label: 'Transfer' },
                 { section: 'Settings' },
-                { id: 'profile', icon: '👤', label: 'My Profile' },
-                { id: 'change-password', icon: '🔑', label: 'Change Password' },
+                { id: 'profile', icon: ICONS.profile, label: 'My Profile' },
+                { id: 'change-password', icon: ICONS.password, label: 'Change Password' },
             ],
             accountant: [
-                { id: 'overview', icon: '📊', label: 'Overview' },
-                { id: 'accounts', icon: '🏦', label: 'All Accounts' },
-                { id: 'requests', icon: '📋', label: 'Pending Requests' },
-                { id: 'all-txns', icon: '📝', label: 'All Transactions' },
-                { id: 'audit-log', icon: '📊', label: 'Audit Log' },
+                { id: 'overview', icon: ICONS.overview, label: 'Overview' },
+                { id: 'accounts', icon: ICONS.accounts, label: 'All Accounts' },
+                { id: 'requests', icon: ICONS.requests, label: 'Pending Requests' },
+                { id: 'all-txns', icon: ICONS.txns, label: 'All Transactions' },
+                { id: 'audit-log', icon: ICONS.audit, label: 'Audit Log' },
                 { section: 'Account Management' },
-                { id: 'create-account', icon: '➕', label: 'Create Account' },
+                { id: 'create-account', icon: ICONS.createacc, label: 'Create Account' },
                 { section: 'Settings' },
-                { id: 'profile', icon: '👤', label: 'My Profile' },
-                { id: 'change-password', icon: '🔑', label: 'Change Password' },
+                { id: 'profile', icon: ICONS.profile, label: 'My Profile' },
+                { id: 'change-password', icon: ICONS.password, label: 'Change Password' },
             ],
             manager: [
-                { id: 'overview', icon: '📊', label: 'Overview' },
-                { id: 'report', icon: '📈', label: 'Bank Report' },
-                { id: 'users', icon: '👥', label: 'Manage Users' },
-                { id: 'branches', icon: '🏢', label: 'Branches' },
+                { id: 'overview', icon: ICONS.overview, label: 'Overview' },
+                { id: 'report', icon: ICONS.report, label: 'Bank Report' },
+                { id: 'users', icon: ICONS.users, label: 'Manage Users' },
+                { id: 'branches', icon: ICONS.branches, label: 'Branches' },
                 { section: 'Operations' },
-                { id: 'accounts', icon: '🏦', label: 'All Accounts' },
-                { id: 'requests', icon: '📋', label: 'Pending Requests' },
-                { id: 'all-txns', icon: '📝', label: 'All Transactions' },
+                { id: 'accounts', icon: ICONS.accounts, label: 'All Accounts' },
+                { id: 'requests', icon: ICONS.requests, label: 'Pending Requests' },
+                { id: 'all-txns', icon: ICONS.txns, label: 'All Transactions' },
                 { section: 'Logs' },
-                { id: 'system-logs', icon: '🔍', label: 'System Logs' },
-                { id: 'audit-log', icon: '📊', label: 'Audit Log' },
+                { id: 'system-logs', icon: ICONS.syslog, label: 'System Logs' },
+                { id: 'audit-log', icon: ICONS.audit, label: 'Audit Log' },
                 { section: 'Settings' },
-                { id: 'profile', icon: '👤', label: 'My Profile' },
-                { id: 'change-password', icon: '🔑', label: 'Change Password' },
+                { id: 'profile', icon: ICONS.profile, label: 'My Profile' },
+                { id: 'change-password', icon: ICONS.password, label: 'Change Password' },
             ],
         };
 
@@ -260,7 +277,7 @@
             const content = document.getElementById('contentArea');
             const renderer = PAGE_RENDERERS[pageId];
             if (renderer) renderer(content);
-            else content.innerHTML = `<div class="empty-state"><div class="icon">🚧</div><p>Page not found</p></div>`;
+            else content.innerHTML = `<div class="empty-state"><div class="icon">—</div><p>Page not found</p></div>`;
         }
 
         // ═══════════════════════════════════════════
@@ -301,15 +318,15 @@
                 const active = accounts.filter(a => a.is_active);
                 const total = active.reduce((s, a) => s + a.balance, 0);
                 statsEl.innerHTML = `
-            <div class="stat-card blue"><div class="stat-icon">💳</div><div class="stat-value">${active.length}</div><div class="stat-label">Active Accounts</div></div>
-            <div class="stat-card green"><div class="stat-icon">💰</div><div class="stat-value">${formatCurrency(total)}</div><div class="stat-label">Total Balance</div></div>
+            <div class="stat-card blue"><div class="stat-icon">AC</div><div class="stat-value">${active.length}</div><div class="stat-label">Active Accounts</div></div>
+            <div class="stat-card green"><div class="stat-icon">BAL</div><div class="stat-value">${formatCurrency(total)}</div><div class="stat-label">Total Balance</div></div>
         `;
                 // Quick actions
                 document.getElementById('quickActionsArea').innerHTML = `
             <div class="quick-actions">
-                <button class="btn btn-success" onclick="navigate('deposit')">💵 Deposit</button>
-                <button class="btn btn-danger" onclick="navigate('withdraw')">🏧 Withdraw</button>
-                <button class="btn btn-primary" onclick="navigate('transfer')">🔄 Transfer</button>
+                <button class="btn btn-success" onclick="navigate('deposit')">Deposit</button>
+                <button class="btn btn-danger" onclick="navigate('withdraw')">Withdraw</button>
+                <button class="btn btn-primary" onclick="navigate('transfer')">Transfer</button>
             </div>
         `;
                 // Account cards
@@ -344,21 +361,21 @@
                 const totalBal = accounts.reduce((s, a) => s + a.balance, 0);
                 const active = accounts.filter(a => a.is_active).length;
                 statsEl.innerHTML = `
-            <div class="stat-card blue"><div class="stat-icon">🏦</div><div class="stat-value">${accounts.length}</div><div class="stat-label">Total Accounts</div></div>
-            <div class="stat-card green"><div class="stat-icon">💰</div><div class="stat-value">${formatCurrency(totalBal)}</div><div class="stat-label">Total Balance</div></div>
-            <div class="stat-card gold"><div class="stat-icon">✅</div><div class="stat-value">${active}</div><div class="stat-label">Active Accounts</div></div>
+            <div class="stat-card blue"><div class="stat-icon">AC</div><div class="stat-value">${accounts.length}</div><div class="stat-label">Total Accounts</div></div>
+            <div class="stat-card green"><div class="stat-icon">BAL</div><div class="stat-value">${formatCurrency(totalBal)}</div><div class="stat-label">Total Balance</div></div>
+            <div class="stat-card gold"><div class="stat-icon">ACT</div><div class="stat-value">${active}</div><div class="stat-label">Active Accounts</div></div>
         `;
                 if (currentUser.role === 'manager') {
                     try {
                         const r = await api('/api/report');
                         statsEl.innerHTML += `
-                    <div class="stat-card red"><div class="stat-icon">📋</div><div class="stat-value">${r.pending_requests}</div><div class="stat-label">Pending Requests</div></div>
+                    <div class="stat-card red"><div class="stat-icon">REQ</div><div class="stat-value">${r.pending_requests}</div><div class="stat-label">Pending Requests</div></div>
                 `;
                         document.getElementById('quickActionsArea').innerHTML = `
                     <div class="stats-grid" style="margin-bottom:24px">
-                        <div class="stat-card blue"><div class="stat-icon">👤</div><div class="stat-value">${r.user_count}</div><div class="stat-label">Active Users</div></div>
-                        <div class="stat-card green"><div class="stat-icon">📥</div><div class="stat-value">${formatCurrency(r.total_deposits)}</div><div class="stat-label">Total Deposits</div></div>
-                        <div class="stat-card red"><div class="stat-icon">📤</div><div class="stat-value">${formatCurrency(r.total_withdrawals)}</div><div class="stat-label">Total Withdrawals</div></div>
+                        <div class="stat-card blue"><div class="stat-icon">USR</div><div class="stat-value">${r.user_count}</div><div class="stat-label">Active Users</div></div>
+                        <div class="stat-card green"><div class="stat-icon">IN</div><div class="stat-value">${formatCurrency(r.total_deposits)}</div><div class="stat-label">Total Deposits</div></div>
+                        <div class="stat-card red"><div class="stat-icon">IN</div><div class="stat-value">${formatCurrency(r.total_withdrawals)}</div><div class="stat-label">Total Withdrawals</div></div>
                     </div>
                 `;
                     } catch (e) { }
@@ -366,7 +383,7 @@
                     try {
                         const reqs = await api('/api/requests');
                         statsEl.innerHTML += `
-                    <div class="stat-card gold"><div class="stat-icon">📋</div><div class="stat-value">${reqs.length}</div><div class="stat-label">Pending Requests</div></div>
+                    <div class="stat-card gold"><div class="stat-icon">REQ</div><div class="stat-value">${reqs.length}</div><div class="stat-label">Pending Requests</div></div>
                 `;
                     } catch (e) { }
                 }
@@ -387,9 +404,9 @@
             const active = accounts.filter(a => a.is_active).length;
 
             document.getElementById('accStats').innerHTML = `
-        <div class="stat-card blue"><div class="stat-icon">💳</div><div class="stat-value">${accounts.length}</div><div class="stat-label">Total Accounts</div></div>
-        <div class="stat-card green"><div class="stat-icon">💰</div><div class="stat-value">${formatCurrency(total)}</div><div class="stat-label">Combined Balance</div></div>
-        <div class="stat-card gold"><div class="stat-icon">✅</div><div class="stat-value">${active}</div><div class="stat-label">Active</div></div>
+        <div class="stat-card blue"><div class="stat-icon">AC</div><div class="stat-value">${accounts.length}</div><div class="stat-label">Total Accounts</div></div>
+        <div class="stat-card green"><div class="stat-icon">BAL</div><div class="stat-value">${formatCurrency(total)}</div><div class="stat-label">Combined Balance</div></div>
+        <div class="stat-card gold"><div class="stat-icon">ACT</div><div class="stat-value">${active}</div><div class="stat-label">Active</div></div>
     `;
 
             const table = document.getElementById('accTable');
@@ -406,7 +423,7 @@
                     <td><span class="badge badge-blue">${a.account_type}</span></td>
                     <td class="amount-positive">${formatCurrency(a.balance)}</td>
                     <td>${a.is_active ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-red">Closed</span>'}</td>
-                    <td><button class="btn btn-sm btn-ghost" onclick="showTransactions(${a.account_id})">View Txns</button><button class="btn btn-sm" onclick="downloadStatement(${a.account_id})" style="margin-left:4px" title="Download Statement">📄 Statement</button></td>
+                    <td><button class="btn btn-sm btn-ghost" onclick="showTransactions(${a.account_id})">View Txns</button><button class="btn btn-sm" onclick="downloadStatement(${a.account_id})" style="margin-left:4px" title="Download Statement"> Statement</button></td>
                 </tr>
             `).join('')}</tbody>
         </table>
@@ -445,19 +462,19 @@
             const activeAccounts = accounts.filter(a => a.is_active);
             if (!activeAccounts.length) {
                 el.innerHTML = `
-            <div class="page-header"><h2>💵 Deposit</h2><p>Add funds to your account</p></div>
-            <div class="empty-state"><div class="icon">💳</div><p>No accounts found</p><p style="font-size:0.9rem;color:var(--text-muted)">Contact an accountant to create a bank account first.</p></div>
+            <div class="page-header"><h2>Deposit</h2><p>Add funds to your account</p></div>
+            <div class="empty-state"><div class="icon">—</div><p>No accounts found</p><p style="font-size:0.9rem;color:var(--text-muted)">Contact an accountant to create a bank account first.</p></div>
         `;
                 return;
             }
             el.innerHTML = `
-        <div class="page-header"><h2>💵 Deposit</h2><p>Add funds to your account</p></div>
+        <div class="page-header"><h2>Deposit</h2><p>Add funds to your account</p></div>
         <div class="modal" style="max-width:480px">
             <div class="form-group"><label>Account</label>
                 <select id="depositAcc">${activeAccounts.map(a => `<option value="${a.account_id}">#${a.account_id} — ${a.account_type.toUpperCase()} (${formatCurrency(a.balance)})</option>`).join('')}</select>
             </div>
             <div class="form-group"><label>Amount (₹)</label><input type="number" id="depositAmt" min="1" step="0.01" placeholder="Enter amount"></div>
-            <button class="btn btn-success" onclick="doDeposit()" style="width:100%">💵 Deposit</button>
+            <button class="btn btn-success" onclick="doDeposit()" style="width:100%">Deposit</button>
         </div>
     `;
         }
@@ -482,20 +499,20 @@
             const activeAccounts = accounts.filter(a => a.is_active);
             if (!activeAccounts.length) {
                 el.innerHTML = `
-            <div class="page-header"><h2>🏧 Withdraw</h2><p>Withdraw funds from your account</p></div>
-            <div class="empty-state"><div class="icon">💳</div><p>No accounts found</p><p style="font-size:0.9rem;color:var(--text-muted)">Contact an accountant to create a bank account first.</p></div>
+            <div class="page-header"><h2>Withdraw</h2><p>Withdraw funds from your account</p></div>
+            <div class="empty-state"><div class="icon">—</div><p>No accounts found</p><p style="font-size:0.9rem;color:var(--text-muted)">Contact an accountant to create a bank account first.</p></div>
         `;
                 return;
             }
             el.innerHTML = `
-        <div class="page-header"><h2>🏧 Withdraw</h2><p>Withdraw funds from your account</p></div>
+        <div class="page-header"><h2>Withdraw</h2><p>Withdraw funds from your account</p></div>
         <div class="modal" style="max-width:480px">
             <div class="form-group"><label>Account</label>
                 <select id="withdrawAcc">${activeAccounts.map(a => `<option value="${a.account_id}">#${a.account_id} — ${a.account_type.toUpperCase()} (${formatCurrency(a.balance)})</option>`).join('')}</select>
             </div>
             <div class="form-group"><label>Amount (₹)</label><input type="number" id="withdrawAmt" min="1" step="0.01" placeholder="Enter amount"></div>
-            <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px">⚠ Withdrawals ≥ ₹5,000 require accountant approval</p>
-            <button class="btn btn-danger" onclick="doWithdraw()" style="width:100%">🏧 Withdraw</button>
+            <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px"> Withdrawals ≥ ₹5,000 require accountant approval</p>
+            <button class="btn btn-danger" onclick="doWithdraw()" style="width:100%">Withdraw</button>
         </div>
     `;
         }
@@ -521,21 +538,21 @@
             const activeAccounts = accounts.filter(a => a.is_active);
             if (!activeAccounts.length) {
                 el.innerHTML = `
-            <div class="page-header"><h2>🔄 Transfer</h2><p>Transfer funds between accounts</p></div>
-            <div class="empty-state"><div class="icon">💳</div><p>No accounts found</p><p style="font-size:0.9rem;color:var(--text-muted)">Contact an accountant to create a bank account first.</p></div>
+            <div class="page-header"><h2>Transfer</h2><p>Transfer funds between accounts</p></div>
+            <div class="empty-state"><div class="icon">—</div><p>No accounts found</p><p style="font-size:0.9rem;color:var(--text-muted)">Contact an accountant to create a bank account first.</p></div>
         `;
                 return;
             }
             el.innerHTML = `
-        <div class="page-header"><h2>🔄 Transfer</h2><p>Transfer funds between accounts</p></div>
+        <div class="page-header"><h2>Transfer</h2><p>Transfer funds between accounts</p></div>
         <div class="modal" style="max-width:480px">
             <div class="form-group"><label>From Account</label>
                 <select id="txfrFrom">${activeAccounts.map(a => `<option value="${a.account_id}">#${a.account_id} — ${a.account_type.toUpperCase()} (${formatCurrency(a.balance)})</option>`).join('')}</select>
             </div>
             <div class="form-group"><label>To Account #</label><input type="number" id="txfrTo" min="1" placeholder="Destination account ID"></div>
             <div class="form-group"><label>Amount (₹)</label><input type="number" id="txfrAmt" min="1" step="0.01" placeholder="Enter amount"></div>
-            <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px">⚠ Transfers ≥ ₹5,000 require accountant approval</p>
-            <button class="btn btn-primary" onclick="doTransfer()" style="width:100%">🔄 Transfer</button>
+            <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px"> Transfers ≥ ₹5,000 require accountant approval</p>
+            <button class="btn btn-primary" onclick="doTransfer()" style="width:100%">Transfer</button>
         </div>
     `;
         }
@@ -557,11 +574,11 @@
 
         // ── PENDING REQUESTS ──
         async function renderRequests(el) {
-            el.innerHTML = `<div class="page-header"><h2>📋 Pending Requests</h2><p>Review and process pending requests</p></div><div id="reqTable"></div>`;
+            el.innerHTML = `<div class="page-header"><h2>Pending Requests</h2><p>Review and process pending requests</p></div><div id="reqTable"></div>`;
             const reqs = await api('/api/requests');
 
             if (!reqs.length) {
-                document.getElementById('reqTable').innerHTML = '<div class="empty-state"><div class="icon">✨</div><p>No pending requests</p></div>';
+                document.getElementById('reqTable').innerHTML = '<div class="empty-state"><div class="icon">—</div><p>No pending requests</p></div>';
                 return;
             }
 
@@ -593,14 +610,14 @@
 
         // ── ALL TRANSACTIONS ──
         async function renderAllTransactions(el) {
-            el.innerHTML = `<div class="page-header"><h2>📝 All Transactions</h2><p>Complete transaction history</p></div><div id="allTxnTable"></div>`;
+            el.innerHTML = `<div class="page-header"><h2>All Transactions</h2><p>Complete transaction history</p></div><div id="allTxnTable"></div>`;
             const txns = await api('/api/transactions/all');
             renderTransactionTable(document.getElementById('allTxnTable'), txns, `Transactions (${txns.length})`);
         }
 
         function renderTransactionTable(container, txns, title) {
             if (!txns.length) {
-                container.innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>No transactions</p></div>';
+                container.innerHTML = '<div class="empty-state"><div class="icon">—</div><p>No transactions</p></div>';
                 return;
             }
             container.innerHTML = `
@@ -614,18 +631,18 @@
             <td style="color:var(--text-muted);font-size:0.82rem">${t.timestamp}</td>
             <td style="font-size:0.85rem">${t.description}</td>
             <td><span class="badge badge-${t.status === 'completed' ? 'green' : 'yellow'}">${t.status}</span></td>
-            <td><button onclick="viewReceipt(${t.txn_id})" class="btn" style="padding:4px 10px;font-size:0.75rem" title="View Receipt">📄</button></td>
+            <td><button onclick="viewReceipt(${t.txn_id})" class="btn" style="padding:4px 10px;font-size:0.75rem" title="View Receipt"></button></td>
         </tr>`).join('')}</tbody></table></div>
     `;
         }
 
         // ── AUDIT LOG ──
         async function renderAuditLog(el) {
-            el.innerHTML = `<div class="page-header"><h2>📊 Audit Log</h2><p>Record of all system actions</p></div><div id="auditTable"></div>`;
+            el.innerHTML = `<div class="page-header"><h2>Audit Log</h2><p>Record of all system actions</p></div><div id="auditTable"></div>`;
             const logs = await api('/api/audit-logs');
 
             if (!logs.length) {
-                document.getElementById('auditTable').innerHTML = '<div class="empty-state"><div class="icon">📊</div><p>No audit entries</p></div>';
+                document.getElementById('auditTable').innerHTML = '<div class="empty-state"><div class="icon">—</div><p>No audit entries</p></div>';
                 return;
             }
 
@@ -655,7 +672,7 @@
             }
 
             el.innerHTML = `
-        <div class="page-header"><h2>➕ Create Account</h2><p>Open a new customer bank account</p></div>
+        <div class="page-header"><h2>Create Account</h2><p>Open a new customer bank account</p></div>
         <div class="modal" style="max-width:480px">
             <div class="form-group"><label>Customer User ID</label><input type="number" id="caUserId" min="1" placeholder="Customer user ID"></div>
             <div class="form-group"><label>Full Name</label><input type="text" id="caName" placeholder="Customer name"></div>
@@ -665,7 +682,7 @@
                 <select id="caType"><option value="savings">Savings</option><option value="current">Current</option><option value="fixed_deposit">Fixed Deposit</option></select>
             </div>
             <div class="form-group"><label>Initial Deposit (₹)</label><input type="number" id="caBalance" min="0" step="0.01" value="0" placeholder="0.00"></div>
-            <button class="btn btn-success" onclick="doCreateAccount()" style="width:100%">➕ Create Account</button>
+            <button class="btn btn-success" onclick="doCreateAccount()" style="width:100%">Create Account</button>
         </div>
     `;
         }
@@ -689,20 +706,20 @@
 
         // ── BANK REPORT (Manager) ──
         async function renderReport(el) {
-            el.innerHTML = `<div class="page-header"><h2>📈 Bank Report</h2><p>Comprehensive bank analytics</p></div><div id="reportContent">Loading...</div>`;
+            el.innerHTML = `<div class="page-header"><h2>Bank Report</h2><p>Comprehensive bank analytics</p></div><div id="reportContent">Loading...</div>`;
             const r = await api('/api/report');
 
             document.getElementById('reportContent').innerHTML = `
         <div class="stats-grid">
-            <div class="stat-card green"><div class="stat-icon">💰</div><div class="stat-value">${formatCurrency(r.total_balance)}</div><div class="stat-label">Total Balance</div></div>
-            <div class="stat-card blue"><div class="stat-icon">📥</div><div class="stat-value">${formatCurrency(r.total_deposits)}</div><div class="stat-label">Total Deposits</div></div>
-            <div class="stat-card red"><div class="stat-icon">📤</div><div class="stat-value">${formatCurrency(r.total_withdrawals)}</div><div class="stat-label">Total Withdrawals</div></div>
-            <div class="stat-card gold"><div class="stat-icon">💳</div><div class="stat-value">${r.account_count}</div><div class="stat-label">Active Accounts</div></div>
-            <div class="stat-card blue"><div class="stat-icon">👤</div><div class="stat-value">${r.user_count}</div><div class="stat-label">Active Users</div></div>
-            <div class="stat-card gold"><div class="stat-icon">📋</div><div class="stat-value">${r.pending_requests}</div><div class="stat-label">Pending Requests</div></div>
+            <div class="stat-card green"><div class="stat-icon">IN</div><div class="stat-value">${formatCurrency(r.total_balance)}</div><div class="stat-label">Total Balance</div></div>
+            <div class="stat-card blue"><div class="stat-icon">IN</div><div class="stat-value">${formatCurrency(r.total_deposits)}</div><div class="stat-label">Total Deposits</div></div>
+            <div class="stat-card red"><div class="stat-icon">IN</div><div class="stat-value">${formatCurrency(r.total_withdrawals)}</div><div class="stat-label">Total Withdrawals</div></div>
+            <div class="stat-card gold"><div class="stat-icon">AC</div><div class="stat-value">${r.account_count}</div><div class="stat-label">Active Accounts</div></div>
+            <div class="stat-card blue"><div class="stat-icon">USR</div><div class="stat-value">${r.user_count}</div><div class="stat-label">Active Users</div></div>
+            <div class="stat-card gold"><div class="stat-icon">REQ</div><div class="stat-value">${r.pending_requests}</div><div class="stat-label">Pending Requests</div></div>
         </div>
         ${r.branches.length ? `
-            <div class="table-card"><div class="table-header"><h3>🏛 Branches</h3></div>
+            <div class="table-card"><div class="table-header"><h3>Branches</h3></div>
             <table class="data-table"><thead><tr><th>ID</th><th>Name</th><th>Location</th><th>Manager ID</th></tr></thead>
             <tbody>${r.branches.map(b => `<tr>
                 <td>${b.branch_id}</td><td style="font-weight:600">${b.branch_name}</td><td>${b.location}</td><td>${b.manager_id || '—'}</td>
@@ -713,8 +730,8 @@
 
         // ── MANAGE USERS (Manager) ──
         async function renderUsers(el) {
-            el.innerHTML = `<div class="page-header"><h2>👥 Manage Users</h2><p>Create, toggle, and manage system users</p></div>
-        <div style="margin-bottom:20px"><button class="btn btn-sm btn-success" onclick="showCreateUserModal()">➕ Create User</button></div>
+            el.innerHTML = `<div class="page-header"><h2>Manage Users</h2><p>Create, toggle, and manage system users</p></div>
+        <div style="margin-bottom:20px"><button class="btn btn-sm btn-success" onclick="showCreateUserModal()">Create User</button></div>
         <div id="usersTable"></div>`;
 
             const users = await api('/api/users');
@@ -725,14 +742,14 @@
         <tbody>${users.map(u => `<tr>
             <td style="font-weight:600">${u.user_id}</td>
             <td>${u.username}</td>
-            <td>${u.full_name}</td>
+            <td><a href="#" class="customer-link" onclick="event.preventDefault();viewCustomerDetails(${u.user_id})">${u.full_name}</a></td>
             <td><span class="badge badge-${u.role === 'manager' ? 'red' : u.role === 'accountant' ? 'yellow' : 'green'}">${u.role}</span></td>
             <td style="color:var(--text-muted);font-size:0.82rem">${u.created_at}</td>
             <td>
-                ${u.is_locked ? '<span class="badge badge-red">🔒 Locked</span>' : u.is_active ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-red">Inactive</span>'}
+                ${u.is_locked ? '<span class="badge badge-red">Locked</span>' : u.is_active ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-red">Inactive</span>'}
             </td>
             <td>
-                ${u.is_locked ? `<button class="btn btn-sm btn-success" onclick="unlockUser(${u.user_id})">🔓 Unlock</button>` : ''}
+                ${u.is_locked ? `<button class="btn btn-sm btn-success" onclick="unlockUser(${u.user_id})">Unlock</button>` : ''}
                 <button class="btn btn-sm btn-warning" onclick="toggleUser(${u.user_id})">${u.is_active ? 'Deactivate' : 'Activate'}</button>
                 <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.user_id},'${u.username}')">Delete</button>
             </td>
@@ -743,7 +760,7 @@
         function showCreateUserModal() {
             const modal = document.getElementById('modalContent');
             modal.innerHTML = `
-        <h3>➕ Create New User</h3>
+        <h3>Create New User</h3>
         <div class="form-group"><label>Username</label><input type="text" id="newUsername" placeholder="username"></div>
         <div class="form-group"><label>Password</label><input type="password" id="newPassword" placeholder="password"></div>
         <div class="form-group"><label>Full Name</label><input type="text" id="newFullName" placeholder="Full Name"></div>
@@ -793,11 +810,11 @@
 
         // ── SYSTEM LOGS (Manager) ──
         async function renderSystemLogs(el) {
-            el.innerHTML = `<div class="page-header"><h2>🔍 System Logs</h2><p>System-level events and login history</p></div><div id="sysLogTable"></div>`;
+            el.innerHTML = `<div class="page-header"><h2>System Logs</h2><p>System-level events and login history</p></div><div id="sysLogTable"></div>`;
             const logs = await api('/api/system-logs');
 
             if (!logs.length) {
-                document.getElementById('sysLogTable').innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>No system logs</p></div>';
+                document.getElementById('sysLogTable').innerHTML = '<div class="empty-state"><div class="icon">—</div><p>No system logs</p></div>';
                 return;
             }
 
@@ -818,7 +835,7 @@
         async function renderProfile(el) {
             const p = await api('/api/profile');
             el.innerHTML = `
-                <div class="page-header"><h2>👤 My Profile</h2><p>Manage your personal information</p></div>
+                <div class="page-header"><h2>My Profile</h2><p>Manage your personal information</p></div>
                 <div class="modal" style="max-width:520px">
                     <div style="text-align:center;margin-bottom:20px">
                         <div class="avatar ${p.role}" style="width:64px;height:64px;font-size:1.4rem;margin:0 auto 8px">${p.full_name.split(' ').map(w => w[0]).join('')}</div>
@@ -829,7 +846,7 @@
                     <div class="form-group"><label>Email</label><input type="email" id="profEmail" value="${p.email || ''}" placeholder="your@email.com"></div>
                     <div class="form-group"><label>Phone</label><input type="tel" id="profPhone" value="${p.phone || ''}" placeholder="+91 xxxxxxxxxx"></div>
                     <div class="form-group"><label>Address</label><input type="text" id="profAddress" value="${p.address || ''}" placeholder="Your address"></div>
-                    <button class="btn btn-primary" onclick="saveProfile()" style="width:100%">💾 Save Profile</button>
+                    <button class="btn btn-primary" onclick="saveProfile()" style="width:100%">Save Profile</button>
                 </div>
             `;
         }
@@ -849,12 +866,12 @@
         // ── CHANGE PASSWORD ──
         async function renderChangePassword(el) {
             el.innerHTML = `
-                <div class="page-header"><h2>🔑 Change Password</h2><p>Update your account password</p></div>
+                <div class="page-header"><h2>Change Password</h2><p>Update your account password</p></div>
                 <div class="modal" style="max-width:420px">
                     <div class="form-group"><label>Current Password</label><input type="password" id="cpOld" placeholder="Enter current password"></div>
                     <div class="form-group"><label>New Password</label><input type="password" id="cpNew" placeholder="Enter new password (min 4 chars)"></div>
                     <div class="form-group"><label>Confirm New Password</label><input type="password" id="cpConfirm" placeholder="Re-enter new password"></div>
-                    <button class="btn btn-primary" onclick="doChangePassword()" style="width:100%">🔒 Change Password</button>
+                    <button class="btn btn-primary" onclick="doChangePassword()" style="width:100%">Change Password</button>
                 </div>
             `;
         }
@@ -877,13 +894,13 @@
         async function renderBranches(el) {
             const branches = await api('/api/branches');
             el.innerHTML = `
-                <div class="page-header"><h2>🏢 Branch Management</h2><p>Add and manage bank branches</p></div>
-                <button class="btn btn-success" onclick="showCreateBranchModal()" style="margin-bottom:16px">➕ Add Branch</button>
+                <div class="page-header"><h2>Branch Management</h2><p>Add and manage bank branches</p></div>
+                <button class="btn btn-success" onclick="showCreateBranchModal()" style="margin-bottom:16px">Add Branch</button>
                 <div id="branchesTable"></div>
             `;
             const tbl = document.getElementById('branchesTable');
             if (!branches.length) {
-                tbl.innerHTML = '<div class="empty-state"><div class="icon">🏢</div><p>No branches yet</p><p style="font-size:0.9rem;color:var(--text-muted)">Click "Add Branch" to create one</p></div>';
+                tbl.innerHTML = '<div class="empty-state"><div class="icon">—</div><p>No branches yet</p><p style="font-size:0.9rem;color:var(--text-muted)">Click "Add Branch" to create one</p></div>';
                 return;
             }
             tbl.innerHTML = `
@@ -900,7 +917,7 @@
         }
         function showCreateBranchModal() {
             document.getElementById('modalContent').innerHTML = `
-                <h3 style="margin-bottom:16px">➕ Add New Branch</h3>
+                <h3 style="margin-bottom:16px">+ Add New Branch</h3>
                 <div class="form-group"><label>Branch Name</label><input type="text" id="brName" placeholder="e.g. Main Branch"></div>
                 <div class="form-group"><label>Location</label><input type="text" id="brLocation" placeholder="e.g. Mumbai, Maharashtra"></div>
                 <button class="btn btn-success" onclick="doCreateBranch()" style="width:100%">Create Branch</button>
@@ -941,6 +958,55 @@
             try {
                 await api(`/api/users/${id}/unlock`, { method: 'POST' });
                 showToast('User unlocked!'); navigate('users');
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        // ── CUSTOMER DETAIL VIEW ──
+        async function viewCustomerDetails(userId) {
+            try {
+                const d = await api(`/api/users/${userId}/details`);
+                const u = d.user;
+                const overlay = document.getElementById('modalOverlay');
+                overlay.innerHTML = `
+                <div class="modal-content" style="max-width:800px;max-height:85vh;overflow-y:auto" onclick="event.stopPropagation()">
+                    <button class="modal-close" onclick="closeModal()">&times;</button>
+                    <div class="customer-detail-header">
+                        <div class="avatar" style="width:56px;height:56px;font-size:1.3rem">${u.full_name.split(' ').map(n => n[0]).join('')}</div>
+                        <div>
+                            <h2 style="margin:0">${u.full_name}</h2>
+                            <div style="color:var(--text-muted);font-size:0.9rem">@${u.username} &middot; <span class="badge badge-${u.role === 'manager' ? 'red' : u.role === 'accountant' ? 'yellow' : 'green'}">${u.role}</span>
+                            ${u.is_locked ? ' <span class="badge badge-red">Locked</span>' : !u.is_active ? ' <span class="badge badge-red">Inactive</span>' : ''}</div>
+                        </div>
+                    </div>
+                    <div class="customer-detail-info">
+                        <div class="info-row"><span class="info-label">Email</span><span>${u.email || '—'}</span></div>
+                        <div class="info-row"><span class="info-label">Phone</span><span>${u.phone || '—'}</span></div>
+                        <div class="info-row"><span class="info-label">Address</span><span>${u.address || '—'}</span></div>
+                        <div class="info-row"><span class="info-label">Member Since</span><span>${u.created_at || '—'}</span></div>
+                    </div>
+                    <div class="table-card" style="margin-top:20px">
+                        <div class="table-header"><h3>Accounts (${d.accounts.length})</h3></div>
+                        ${d.accounts.length ? `<table class="data-table"><thead><tr><th>ID</th><th>Type</th><th>Balance</th><th>Status</th></tr></thead>
+                        <tbody>${d.accounts.map(a => `<tr>
+                            <td style="font-weight:600">${a.account_id}</td>
+                            <td>${a.account_type}</td>
+                            <td style="font-weight:600">${formatCurrency(a.balance)}</td>
+                            <td><span class="badge badge-${a.is_active ? 'green' : 'red'}">${a.is_active ? 'Active' : 'Closed'}</span></td>
+                        </tr>`).join('')}</tbody></table>` : '<div style="padding:20px;text-align:center;color:var(--text-muted)">No accounts</div>'}
+                    </div>
+                    <div class="table-card" style="margin-top:16px">
+                        <div class="table-header"><h3>Recent Transactions (${d.transactions.length})</h3></div>
+                        ${d.transactions.length ? `<table class="data-table"><thead><tr><th>ID</th><th>Type</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+                        <tbody>${d.transactions.slice(0, 20).map(t => `<tr>
+                            <td>${t.txn_id}</td>
+                            <td>${t.txn_type}</td>
+                            <td style="font-weight:600">${formatCurrency(t.amount)}</td>
+                            <td><span class="badge badge-${t.status === 'completed' ? 'green' : t.status === 'pending' ? 'yellow' : 'red'}">${t.status}</span></td>
+                            <td style="color:var(--text-muted);font-size:0.82rem">${t.timestamp}</td>
+                        </tr>`).join('')}</tbody></table>` : '<div style="padding:20px;text-align:center;color:var(--text-muted)">No transactions</div>'}
+                    </div>
+                </div>`;
+                overlay.classList.add('visible');
             } catch (e) { showToast(e.message, 'error'); }
         }
 

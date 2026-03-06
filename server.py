@@ -529,6 +529,40 @@ def api_unlock_user(user_id):
     return jsonify({"success": True})
 
 
+@app.route("/api/users/<int:user_id>/details")
+@role_required("manager", "accountant")
+def api_user_details(user_id):
+    """Get full details for a customer: profile + accounts + transactions."""
+    user = db_manager.get_user_by_id(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    accounts = db_manager.get_accounts_by_user(user_id)
+    all_txns = []
+    for acc in accounts:
+        txns = db_manager.get_transactions_by_account(acc["account_id"], limit=50)
+        all_txns.extend(txns)
+    # Sort by timestamp descending
+    all_txns.sort(key=lambda t: t.get("timestamp", ""), reverse=True)
+
+    return jsonify({
+        "user": {
+            "user_id": user["user_id"],
+            "username": user["username"],
+            "full_name": user["full_name"],
+            "role": user["role"],
+            "email": user.get("email", ""),
+            "phone": user.get("phone", ""),
+            "address": user.get("address", ""),
+            "is_active": user["is_active"],
+            "is_locked": user.get("is_locked", False),
+            "created_at": user.get("created_at", ""),
+        },
+        "accounts": accounts,
+        "transactions": all_txns,
+    })
+
+
 # ─────────────────────────────────────────────
 # BRANCH MANAGEMENT API
 # ─────────────────────────────────────────────
@@ -572,6 +606,8 @@ def api_delete_branch(branch_id):
 # MINI STATEMENT & RECEIPT API
 # ─────────────────────────────────────────────
 
+from logo_b64 import LOGO_B64
+
 @app.route("/api/accounts/<int:account_id>/statement")
 @login_required
 def api_mini_statement(account_id):
@@ -598,11 +634,14 @@ def api_mini_statement(account_id):
             <td>{t['status'].upper()}</td>
         </tr>"""
 
-    html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>Mini Statement</title>
+    html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>Apex Trust Bank — Statement</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
       body{{font-family:'Inter',sans-serif;padding:40px;color:#1a1a2e;max-width:800px;margin:0 auto}}
       .header{{text-align:center;border-bottom:3px solid #0c2340;padding-bottom:20px;margin-bottom:20px}}
-      .header h1{{color:#0c2340;margin:0;font-size:1.5rem}} .header p{{color:#64748b;margin:4px 0;font-size:0.85rem}}
+      .header img{{width:52px;height:52px;margin-bottom:8px}}
+      .header h1{{color:#0c2340;margin:0;font-size:1.5rem;letter-spacing:-0.01em}}
+      .header .subtitle{{color:#64748b;margin:4px 0;font-size:0.85rem}}
       .info-grid{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;font-size:0.9rem}}
       .info-grid div{{padding:10px;background:#f1f5f9;border-radius:6px}}
       .info-grid strong{{color:#0c2340}}
@@ -612,9 +651,20 @@ def api_mini_statement(account_id):
       tr:nth-child(even){{background:#f8fafc}}
       .footer{{text-align:center;margin-top:30px;font-size:0.75rem;color:#94a3b8;border-top:2px solid #e2e8f0;padding-top:15px}}
       .balance{{font-size:1.3rem;font-weight:700;color:#0c2340;text-align:right;margin:16px 0}}
-      @media print{{body{{padding:20px}}}}
+      .stamp-container{{text-align:center;margin-top:24px}}
+      .bank-stamp{{display:inline-block;border:3px solid #0c2340;border-radius:8px;padding:10px 24px;
+                   transform:rotate(-4deg);opacity:0.7;text-align:center}}
+      .bank-stamp .stamp-title{{color:#0c2340;font-weight:700;font-size:0.9rem;letter-spacing:0.05em}}
+      .bank-stamp .stamp-sub{{color:#64748b;font-size:0.7rem;margin-top:2px}}
+      .bank-stamp img{{width:30px;height:30px;margin-bottom:4px}}
+      @media print{{body{{padding:20px}} .bank-stamp{{opacity:0.5}}}}
     </style></head><body>
-    <div class="header"><h1>🏦 Bank Security System</h1><p>Mini Statement / Passbook</p><p>Generated on {now}</p></div>
+    <div class="header">
+      <img src="{LOGO_B64}" alt="Apex Trust Bank">
+      <h1>Apex Trust Bank</h1>
+      <p class="subtitle">Account Statement</p>
+      <p class="subtitle">Generated on {now}</p>
+    </div>
     <div class="info-grid">
       <div><strong>Account No:</strong> {str(account_id).zfill(6)}</div>
       <div><strong>Account Type:</strong> {account['account_type'].upper()}</div>
@@ -624,8 +674,12 @@ def api_mini_statement(account_id):
     <div class="balance">Current Balance: ₹{account['balance']:,.2f}</div>
     <table><thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
     <tbody>{rows if rows else '<tr><td colspan="5" style="text-align:center;padding:20px">No transactions found</td></tr>'}</tbody></table>
+    <div class="stamp-container"><div class="bank-stamp">
+      <img src="{LOGO_B64}" alt=""><div class="stamp-title">APEX TRUST BANK</div>
+      <div class="stamp-sub">Authorised Statement</div>
+    </div></div>
     <div class="footer"><p>This is a computer-generated statement and does not require a signature.</p>
-    <p>Bank Security System · Secure · Reliable · Role-Based Access</p></div></body></html>"""
+    <p>Apex Trust Bank &middot; Secure &middot; Reliable &middot; Trusted</p></div></body></html>"""
 
     return html, 200, {"Content-Type": "text/html"}
 
@@ -647,24 +701,34 @@ def api_transaction_receipt(txn_id):
     color = "#16a34a" if txn["txn_type"] == "deposit" else "#dc2626"
     sign = "+" if txn["txn_type"] == "deposit" else "-"
 
-    html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>Transaction Receipt</title>
+    html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>Apex Trust Bank — Receipt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
       body{{font-family:'Inter',sans-serif;padding:40px;color:#1a1a2e;max-width:500px;margin:0 auto}}
       .receipt{{border:2px solid #0c2340;border-radius:12px;padding:30px;position:relative}}
       .receipt::before{{content:'';position:absolute;top:0;left:0;right:0;height:6px;background:#0c2340;border-radius:10px 10px 0 0}}
       .header{{text-align:center;margin-bottom:24px}}
+      .header img{{width:48px;height:48px;margin-bottom:6px}}
       .header h2{{color:#0c2340;margin:0;font-size:1.2rem}} .header p{{color:#94a3b8;font-size:0.8rem;margin:4px 0}}
       .amount{{text-align:center;font-size:2rem;font-weight:700;color:{color};margin:20px 0}}
       .details{{font-size:0.88rem}}
       .details .row{{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f1f5f9}}
       .details .row .label{{color:#64748b}} .details .row .value{{font-weight:600;color:#1a1a2e}}
       .footer{{text-align:center;margin-top:24px;font-size:0.72rem;color:#94a3b8}}
-      .stamp{{text-align:center;margin-top:16px;color:#16a34a;font-weight:700;font-size:0.9rem;
-              border:2px solid #16a34a;display:inline-block;padding:4px 16px;border-radius:4px;transform:rotate(-5deg)}}
+      .stamp-container{{text-align:center;margin-top:20px}}
+      .bank-stamp{{display:inline-block;border:3px solid #16a34a;border-radius:8px;padding:8px 20px;
+                   transform:rotate(-5deg);text-align:center}}
+      .bank-stamp img{{width:24px;height:24px;margin-bottom:2px}}
+      .bank-stamp .stamp-status{{color:#16a34a;font-weight:700;font-size:0.9rem;letter-spacing:0.05em}}
+      .bank-stamp .stamp-bank{{color:#64748b;font-size:0.65rem;margin-top:2px}}
       @media print{{body{{padding:10px}} .receipt{{border:1px solid #ccc}}}}
     </style></head><body>
     <div class="receipt">
-      <div class="header"><h2>🏦 Bank Security System</h2><p>Transaction Receipt</p><p>{now}</p></div>
+      <div class="header">
+        <img src="{LOGO_B64}" alt="Apex Trust Bank">
+        <h2>Apex Trust Bank</h2>
+        <p>Transaction Receipt</p><p>{now}</p>
+      </div>
       <div class="amount">{sign}₹{txn['amount']:,.2f}</div>
       <div class="details">
         <div class="row"><span class="label">Transaction ID</span><span class="value">TXN{str(txn['txn_id']).zfill(8)}</span></div>
@@ -675,8 +739,12 @@ def api_transaction_receipt(txn_id):
         <div class="row"><span class="label">Status</span><span class="value">{txn['status'].upper()}</span></div>
         {'<div class="row"><span class="label">Target Account</span><span class="value">#' + str(txn['target_account_id']).zfill(6) + '</span></div>' if txn.get('target_account_id') else ''}
       </div>
-      <div style="text-align:center;margin-top:20px"><span class="stamp">✓ {txn['status'].upper()}</span></div>
-      <div class="footer"><p>This is a computer-generated receipt.</p><p>Bank Security System</p></div>
+      <div class="stamp-container"><div class="bank-stamp">
+        <img src="{LOGO_B64}" alt="">
+        <div class="stamp-status">{txn['status'].upper()}</div>
+        <div class="stamp-bank">APEX TRUST BANK</div>
+      </div></div>
+      <div class="footer"><p>This is a computer-generated receipt.</p><p>Apex Trust Bank</p></div>
     </div></body></html>"""
 
     return html, 200, {"Content-Type": "text/html"}
@@ -688,7 +756,8 @@ def api_transaction_receipt(txn_id):
 
 if __name__ == "__main__":
     db_manager.init_all_databases()
-    print("\n🏦 Bank Security System — Web UI")
-    print("   http://localhost:5001\n")
+    print("\n  Apex Trust Bank — Web Server")
+    print("  http://localhost:5001\n")
     app.run(debug=True, port=5001)
+
 

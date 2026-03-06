@@ -969,3 +969,121 @@ body {
         padding: 0;
     }
 }
+
+/* ── Logo Images ── */
+.login-logo-img {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 12px;
+}
+
+.topbar-logo-img {
+    width: 32px;
+    height: 32px;
+    margin-right: 8px;
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ── SVG Nav Icons ── */
+.nav-item .icon {
+    font-size: unset;
+    width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.nav-item .icon svg {
+    display: block;
+}
+
+/* ── Stat Icon (text abbreviation) ── */
+.stat-icon {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    opacity: 1;
+}
+
+/* ── Customer Link (clickable name in user table) ── */
+.customer-link {
+    color: var(--primary-600);
+    text-decoration: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.customer-link:hover {
+    color: var(--primary-800);
+    text-decoration: underline;
+}
+
+/* ── Customer Detail Modal ── */
+.customer-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.customer-detail-info {
+    background: var(--gray-50);
+    border-radius: var(--radius-md);
+    padding: 16px;
+}
+
+.customer-detail-info .info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 0.9rem;
+}
+
+.customer-detail-info .info-row:last-child {
+    border-bottom: none;
+}
+
+.customer-detail-info .info-label {
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* ── Modal Content (general) ── */
+.modal-content {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+.modal-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+    transition: color 0.15s;
+}
+
+.modal-close:hover {
+    color: var(--text-primary);
+}
