@@ -182,7 +182,15 @@ def toggle_user_active(user_id: int, active: bool):
 
 
 def delete_user(user_id: int):
-    """Delete a user from the database."""
+    """Delete a user and close all their associated accounts."""
+    # First, close all associated accounts in customers.db
+    cust_conn = get_connection("customers")
+    cust_cursor = cust_conn.cursor()
+    cust_cursor.execute("UPDATE accounts SET is_active = 0 WHERE user_id = ?", (user_id,))
+    cust_conn.commit()
+    cust_conn.close()
+
+    # Then delete the user from managers.db
     conn = get_connection("managers")
     cursor = conn.cursor()
     cursor.execute("DELETE FROM users WHERE user_id = ?", (user_id,))

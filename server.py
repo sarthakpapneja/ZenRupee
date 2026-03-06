@@ -399,8 +399,19 @@ def api_delete_user(user_id):
     if user_id == user["user_id"]:
         return jsonify({"error": "Cannot delete your own account"}), 400
 
+    # Get target user info before deletion
+    users = db_manager.get_all_users()
+    target = None
+    for u in users:
+        if u["user_id"] == user_id:
+            target = u
+            break
+    if not target:
+        return jsonify({"error": "User not found"}), 404
+
     db_manager.delete_user(user_id)
-    db_manager.add_system_log("USER_DELETED", user["user_id"], f"Deleted user ID {user_id} (web)")
+    db_manager.add_system_log("USER_DELETED", user["user_id"], f"Deleted user '{target['username']}' (role: {target['role']}) (web)")
+    db_manager.add_audit_log("USER_DELETED", user["username"], details=f"Deleted {target['role']}: {target['username']} ({target['full_name']}) (web)")
     return jsonify({"success": True})
 
 
