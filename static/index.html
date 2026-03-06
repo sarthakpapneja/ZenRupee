@@ -966,10 +966,10 @@
             try {
                 const d = await api(`/api/users/${userId}/details`);
                 const u = d.user;
-                const overlay = document.getElementById('modalOverlay');
-                overlay.innerHTML = `
-                <div class="modal-content" style="max-width:800px;max-height:85vh;overflow-y:auto" onclick="event.stopPropagation()">
-                    <button class="modal-close" onclick="closeModal()">&times;</button>
+                const modal = document.getElementById('modalContent');
+                modal.style.maxWidth = '800px';
+                modal.innerHTML = `
+                    <button class="modal-close" onclick="closeModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.5rem;color:var(--text-muted);cursor:pointer">&times;</button>
                     <div class="customer-detail-header">
                         <div class="avatar" style="width:56px;height:56px;font-size:1.3rem">${u.full_name.split(' ').map(n => n[0]).join('')}</div>
                         <div>
@@ -1005,8 +1005,9 @@
                             <td style="color:var(--text-muted);font-size:0.82rem">${t.timestamp}</td>
                         </tr>`).join('')}</tbody></table>` : '<div style="padding:20px;text-align:center;color:var(--text-muted)">No transactions</div>'}
                     </div>
-                </div>`;
-                overlay.classList.add('visible');
+                    <div class="modal-actions"><button class="btn btn-sm btn-ghost" onclick="closeModal()">Close</button></div>
+                `;
+                document.getElementById('modalOverlay').classList.add('visible');
             } catch (e) { showToast(e.message, 'error'); }
         }
 
@@ -1014,6 +1015,7 @@
         function closeModal(e) {
             if (e && e.target !== e.currentTarget) return;
             document.getElementById('modalOverlay').classList.remove('visible');
+            document.getElementById('modalContent').style.maxWidth = '';
         }
 
         // ── Check session on load ──
