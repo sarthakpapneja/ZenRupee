@@ -13,7 +13,6 @@ Built with Python · Flask · SQLite · Vanilla JS
 
 <br>
 
-<img src="https://raw.githubusercontent.com/sarthakpapneja/banksecuritysystem/main/screenshots/login.png" alt="Login Page" width="700">
 
 </div>
 
