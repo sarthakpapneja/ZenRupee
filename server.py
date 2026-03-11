@@ -219,6 +219,7 @@ def api_withdraw():
         db_manager.create_request(account_id, "large_withdrawal", amount, f"Requested by {user['username']} (web)")
         db_manager.add_audit_log("WITHDRAWAL_REQUEST", user["username"], account_id, f"₹{amount:,.2f} — pending (web)")
         db_manager.create_security_alert(user["user_id"], f"A large withdrawal of ₹{amount:,.2f} has been requested and requires accountant approval.", "warning")
+        db_manager.notify_staff(f"New large withdrawal request of ₹{amount:,.2f} from Account #{account_id}.")
         return jsonify({"success": True, "pending": True, "message": "Large withdrawal requires accountant approval. Request submitted."})
 
     new_balance = account["balance"] - amount
@@ -265,6 +266,7 @@ def api_transfer():
         db_manager.create_request(src_id, "large_transfer", amount, f"Transfer to #{dst_id} by {user['username']} (web)")
         db_manager.add_audit_log("TRANSFER_REQUEST", user["username"], src_id, f"₹{amount:,.2f} to #{dst_id} — pending (web)")
         db_manager.create_security_alert(user["user_id"], f"A large transfer of ₹{amount:,.2f} to account #{dst_id} has been requested and is pending approval.", "warning")
+        db_manager.notify_staff(f"New large transfer request of ₹{amount:,.2f} from Account #{src_id} to Account #{dst_id}.")
         return jsonify({"success": True, "pending": True, "message": "Large transfer requires approval. Request submitted."})
 
     db_manager.update_balance(src_id, src["balance"] - amount)
@@ -301,6 +303,7 @@ def api_loan_apply():
 
     db_manager.create_request(account_id, "loan", amount, f"Loan application by {user['username']} (web) | Term: {term_months} months")
     db_manager.add_audit_log("LOAN_REQUEST", user["username"], account_id, f"₹{amount:,.2f} — pending (web)")
+    db_manager.notify_staff(f"New loan application of ₹{amount:,.2f} from Account #{account_id}.")
 
     return jsonify({"success": True, "message": "Loan application submitted successfully. Pending accountant approval."})
 
@@ -1308,6 +1311,7 @@ def api_credit_card_apply():
         return jsonify({"error": "Invalid account"}), 400
         
     db_manager.create_request(account_id, "credit_card", limit_requested, f"Requested Limit: ₹{limit_requested:,.2f}")
+    db_manager.notify_staff(f"New credit card application for Limit ₹{limit_requested:,.2f} from Account #{account_id}.")
     return jsonify({"success": True, "message": "Credit card application submitted to management."})
 
 @app.route("/api/credit_cards/pay", methods=["POST"])

@@ -39,4 +39,29 @@ if 'two_factor_enabled' in user:
 else:
     print("2FA status column not explicitly returned in get_user_by_username, but table might have it.")
 
+print("\n--- Testing Distinct Account Number Generation ---")
+try:
+    new_acc_id = db_manager.create_account("Test User", "test@test.com", "1234567890", 1000.0, "checking", user["user_id"])
+    print(f"Generated Random Account ID: {new_acc_id}")
+    if new_acc_id > 10000000:
+        print("Success: Account ID generated is distinctly large.")
+    else:
+        print("Failed: Account ID not generated properly.")
+    
+    # Cleanup
+    conn = db_manager.get_connection("customers")
+    conn.execute("DELETE FROM accounts WHERE account_id = ?", (new_acc_id,))
+    conn.commit()
+    conn.close()
+    print("Test account cleaned up.")
+except Exception as e:
+    print(f"Failed account generation test: {e}")
+
+print("\n--- Testing Notifications ---")
+try:
+    db_manager.notify_staff("Test notification for staff", ["accountant", "manager"])
+    print("Staff notification test successfully invoked without errors.")
+except Exception as e:
+    print(f"Failed to notify staff: {e}")
+
 print("\nBackend testing completed.")

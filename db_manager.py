@@ -420,18 +420,26 @@ def delete_user(user_id: int):
 
 def create_account(customer_name: str, email: str, phone: str, balance: float,
                    account_type: str, user_id: int) -> int:
-    """Create a new bank account."""
+    """Create a new bank account with a distinct 8-10 digit random account_id."""
+    import random
     conn = get_connection("customers")
     cursor = conn.cursor()
+    
+    # Generate a unique 9-digit account number (100000000 to 999999999)
+    while True:
+        acc_id = random.randint(100000000, 999999999)
+        cursor.execute("SELECT account_id FROM accounts WHERE account_id = ?", (acc_id,))
+        if not cursor.fetchone():
+            break
+            
     cursor.execute(
-        """INSERT INTO accounts (customer_name, email, phone, balance, account_type, user_id)
-           VALUES (?, ?, ?, ?, ?, ?)""",
-        (customer_name, email, phone, balance, account_type, user_id)
+        """INSERT INTO accounts (account_id, customer_name, email, phone, balance, account_type, user_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (acc_id, customer_name, email, phone, balance, account_type, user_id)
     )
     conn.commit()
-    acc_id = cursor.lastrowid
     conn.close()
-    return acc_id if acc_id is not None else 0
+    return acc_id
 
 
 def get_accounts_by_user(user_id: int) -> list:
@@ -929,14 +937,34 @@ def get_user_count() -> int:
 # NOTIFICATIONS (managers.db)
 # ─────────────────────────────────────────────
 
-def add_notification(user_id: int, message: str, type: str = "info"):
-    """Record a notification for a user."""
+def add_notification(user_id: int, message: str, notif_type: str = "info"):
+    """Send a notification to a specific user (in managers.db)."""
     conn = get_connection("managers")
     cursor = conn.cursor()
     cursor.execute(
         "INSERT INTO notifications (user_id, message, type) VALUES (?, ?, ?)",
-        (user_id, message, type)
+        (user_id, message, notif_type)
     )
+    conn.commit()
+    conn.close()
+
+
+def notify_staff(message: str, roles: Optional[list] = None, notif_type: str = "info"):
+    """Send a notification to all users with specific roles (default: accountant, manager)."""
+    if roles is None:
+        roles = ["accountant", "manager"]
+        
+    conn = get_connection("managers")
+    cursor = conn.cursor()
+    placeholders = ','.join(['?'] * len(roles))
+    cursor.execute(f"SELECT user_id FROM users WHERE role IN ({placeholders}) AND is_active = 1", tuple(roles))
+    staff_users = cursor.fetchall()
+    
+    for u in staff_users:
+        cursor.execute(
+            "INSERT INTO notifications (user_id, message, type) VALUES (?, ?, ?)",
+            (u["user_id"], message, notif_type)
+        )
     conn.commit()
     conn.close()
 

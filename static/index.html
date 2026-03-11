@@ -1392,31 +1392,7 @@
             } catch (e) { showToast(e.message, 'error'); }
         }
         
-        // Hold base64 value awaiting upload
-        let pendingQRBase64 = null;
-        
-        function handleQRSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                pendingQRBase64 = e.target.result;
-                document.getElementById('qrDisplay').src = pendingQRBase64;
-                document.getElementById('qrPreviewArea').style.display = 'block';
-                document.getElementById('qrSaveBtn').style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        }
-        
-        async function saveQRCode() {
-            if (!pendingQRBase64) return;
-            try {
-                await api('/api/profile/qr', { method: 'POST', body: { qr_code_b64: pendingQRBase64 } });
-                showToast('QR Code updated successfully!');
-                document.getElementById('qrSaveBtn').style.display = 'none';
-                pendingQRBase64 = null;
-            } catch (e) { showToast(e.message, 'error'); }
-        }
+        // Profile QR functionality removed in favor of Account-level QR management
 
         async function saveProfile() {
             try {
