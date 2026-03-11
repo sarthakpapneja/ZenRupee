@@ -143,6 +143,13 @@ def init_customers_db():
             FOREIGN KEY(account_id) REFERENCES accounts(account_id)
         );
     """)
+    
+    # Migration: Add qr_code to accounts if missing
+    cursor = conn.execute("PRAGMA table_info(accounts)")
+    columns = [row["name"] for row in cursor.fetchall()]
+    if "qr_code" not in columns:
+        conn.execute("ALTER TABLE accounts ADD COLUMN qr_code TEXT DEFAULT NULL")
+
     conn.commit()
     conn.close()
 

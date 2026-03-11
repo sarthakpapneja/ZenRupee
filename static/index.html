@@ -1966,6 +1966,15 @@
 
         // ── QR CODE LOGIC ──
         let currentQrAccountId = null;
+        
+        // Hidden file input required for triggering the upload dialogue via manageQr Modal
+        const qrInputMarkup = document.createElement('input');
+        qrInputMarkup.type = 'file';
+        qrInputMarkup.id = 'qrInput';
+        qrInputMarkup.accept = 'image/*';
+        qrInputMarkup.style.display = 'none';
+        qrInputMarkup.onchange = handleQrUpload;
+        document.body.appendChild(qrInputMarkup);
 
         async function manageQr(accId) {
             currentQrAccountId = accId;
