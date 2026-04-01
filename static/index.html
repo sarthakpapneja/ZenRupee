@@ -483,11 +483,12 @@
         <div class="stats-grid animate-in" id="overviewStats"></div>
         <div id="quickActionsArea" class="animate-in"></div>
         <div id="accountCardsArea" class="animate-in"></div>
+        <div id="dashboardAnalytics" class="animate-in"></div>
         <div class="table-card animate-in" id="overviewTable"></div>
     `;
 
             const accounts = await api('/api/accounts');
-            let summary = { total_income: 0, total_expenses: 0, net_balance: 0 };
+            let summary = { total_income: 0, total_expenses: 0, net_balance: 0, category_totals: [], monthly_trends: [], recent_activity: [] };
             try { summary = await api('/api/dashboard/summary'); } catch(e){}
             const statsEl = document.getElementById('overviewStats');
 
@@ -568,6 +569,105 @@
                     } catch (e) { }
                 }
             }
+
+            // ── DASHBOARD ANALYTICS SECTION ──
+            renderDashboardAnalytics(summary);
+        }
+
+        function renderDashboardAnalytics(summary) {
+            const el = document.getElementById('dashboardAnalytics');
+            if (!el) return;
+
+            const cats = summary.category_totals || [];
+            const trends = summary.monthly_trends || [];
+            const recent = summary.recent_activity || [];
+            const maxCat = cats.length ? Math.max(...cats.map(c => c.total)) : 1;
+
+            // Color palette for categories
+            const catColors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6'];
+
+            // Monthly trends: find max for scaling bars
+            const maxTrend = trends.length ? Math.max(...trends.map(t => Math.max(t.income || 0, t.expense || 0)), 1) : 1;
+
+            el.innerHTML = `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px">
+                    <!-- Category Breakdown -->
+                    <div class="table-card" style="padding:24px">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                            <h3 style="margin:0;font-size:1rem;font-weight:600">Spending by Category</h3>
+                            <span style="font-size:0.75rem;color:var(--text-muted)">${cats.length} categories</span>
+                        </div>
+                        ${cats.length ? cats.map((c, i) => {
+                            const pct = Math.round((c.total / maxCat) * 100);
+                            const color = catColors[i % catColors.length];
+                            return `
+                            <div style="margin-bottom:14px">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                                    <div style="display:flex;align-items:center;gap:8px">
+                                        <div style="width:10px;height:10px;border-radius:50%;background:${color}"></div>
+                                        <span style="font-size:0.85rem;font-weight:500">${c.category || 'Uncategorized'}</span>
+                                    </div>
+                                    <span style="font-size:0.85rem;font-weight:600;color:var(--text-primary)">${formatCurrency(c.total)}</span>
+                                </div>
+                                <div style="width:100%;height:8px;background:var(--border-light);border-radius:4px;overflow:hidden">
+                                    <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width 0.6s ease"></div>
+                                </div>
+                            </div>`;
+                        }).join('') : '<div style="text-align:center;padding:30px;color:var(--text-muted);font-size:0.9rem">No category data yet. Make some transactions to see the breakdown.</div>'}
+                    </div>
+
+                    <!-- Monthly Trends -->
+                    <div class="table-card" style="padding:24px">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                            <h3 style="margin:0;font-size:1rem;font-weight:600">Monthly Trends</h3>
+                            <div style="display:flex;gap:12px;font-size:0.75rem">
+                                <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:#10b981"></span> Income</span>
+                                <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:#ef4444"></span> Expense</span>
+                            </div>
+                        </div>
+                        ${trends.length ? `
+                        <div style="display:flex;align-items:flex-end;gap:12px;height:180px;padding-top:10px">
+                            ${trends.map(t => {
+                                const incH = Math.max(4, Math.round(((t.income || 0) / maxTrend) * 150));
+                                const expH = Math.max(4, Math.round(((t.expense || 0) / maxTrend) * 150));
+                                return `
+                                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+                                    <div style="display:flex;gap:3px;align-items:flex-end;height:160px">
+                                        <div style="width:14px;height:${incH}px;background:linear-gradient(to top, #10b981, #34d399);border-radius:3px 3px 0 0;transition:height 0.5s ease" title="Income: ${formatCurrency(t.income || 0)}"></div>
+                                        <div style="width:14px;height:${expH}px;background:linear-gradient(to top, #ef4444, #f87171);border-radius:3px 3px 0 0;transition:height 0.5s ease" title="Expense: ${formatCurrency(t.expense || 0)}"></div>
+                                    </div>
+                                    <div style="font-size:0.7rem;color:var(--text-muted);white-space:nowrap">${t.month}</div>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                        ` : '<div style="text-align:center;padding:30px;color:var(--text-muted);font-size:0.9rem">No monthly data yet. Trends appear after a few transactions.</div>'}
+                    </div>
+                </div>
+
+                <!-- Recent Activity Feed -->
+                ${recent.length ? `
+                <div class="table-card" style="padding:24px;margin-top:20px">
+                    <h3 style="margin:0 0 16px;font-size:1rem;font-weight:600">Recent Activity</h3>
+                    <div style="display:flex;flex-direction:column;gap:12px">
+                        ${recent.map(r => `
+                        <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--bg-card);border:1px solid var(--border-light);border-radius:10px">
+                            <div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:white;background:${r.txn_type === 'deposit' ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #ef4444, #dc2626)'}">
+                                ${r.txn_type === 'deposit' ? '↓' : '↑'}
+                            </div>
+                            <div style="flex:1;min-width:0">
+                                <div style="font-size:0.88rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.description || r.txn_type}</div>
+                                <div style="font-size:0.75rem;color:var(--text-muted);display:flex;gap:8px;margin-top:2px">
+                                    <span>${r.timestamp}</span>
+                                    ${r.category ? `<span class="badge badge-blue" style="font-size:0.65rem;padding:1px 6px">${r.category}</span>` : ''}
+                                </div>
+                            </div>
+                            <div style="font-weight:600;font-size:0.95rem;white-space:nowrap;color:${r.txn_type === 'deposit' ? '#10b981' : '#ef4444'}">${r.txn_type === 'deposit' ? '+' : '-'}${formatCurrency(r.amount)}</div>
+                        </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            `;
         }
 
         // ── ACCOUNTS ──
