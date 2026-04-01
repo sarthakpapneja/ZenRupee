@@ -117,5 +117,5 @@ python3 server.py
 This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for more information (2026).
 
 <div align="center">
-<b>Developed purely for comprehensive back-end application engineering demonstration.</b>
+<b>Made by Sarthak Papneja</b>
 </div>
