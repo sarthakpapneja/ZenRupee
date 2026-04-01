@@ -78,6 +78,7 @@ class Transaction:
     account_id: int
     txn_type: TransactionType
     amount: float
+    category: str = "General"
     timestamp: datetime = field(default_factory=datetime.now)
     description: str = ""
     status: TransactionStatus = TransactionStatus.COMPLETED

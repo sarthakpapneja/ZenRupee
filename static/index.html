@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apex Trust Bank</title>
-    <meta name="description" content="Apex Trust Bank — Secure banking management with role-based access control">
+    <title>ZenRupee</title>
+    <meta name="description" content="ZenRupee — Secure banking management with role-based access control">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -24,8 +24,8 @@
         <div class="login-container">
             <div class="login-card">
                 <div class="login-logo">
-                    <img src="/static/logo.png" alt="Apex Trust Bank" class="login-logo-img">
-                    <h1>Apex Trust Bank</h1>
+                    <img src="/static/logo.png" alt="ZenRupee" class="login-logo-img">
+                    <h1>ZenRupee</h1>
                     <p>Secure · Reliable · Trusted</p>
                 </div>
 
@@ -62,7 +62,7 @@
         <!-- Topbar -->
         <div class="topbar">
             <div class="topbar-left">
-                <img src="/static/logo.png" alt="Logo" class="topbar-logo-img"><span class="logo">Apex Trust Bank</span>
+                <img src="/static/logo.png" alt="Logo" class="topbar-logo-img"><span class="logo">ZenRupee</span>
             </div>
             <div class="topbar-right">
                 <!-- Notification Bell -->
@@ -489,6 +489,8 @@
     `;
 
             const accounts = await api('/api/accounts');
+            let summary = { total_income: 0, total_expenses: 0, net_balance: 0 };
+            try { summary = await api('/api/dashboard/summary'); } catch(e){}
             const statsEl = document.getElementById('overviewStats');
 
             if (currentUser.role === 'customer') {
@@ -497,6 +499,8 @@
                 statsEl.innerHTML = `
             <div class="stat-card blue"><div class="stat-icon">AC</div><div class="stat-value">${active.length}</div><div class="stat-label">Active Accounts</div></div>
             <div class="stat-card green"><div class="stat-icon">BAL</div><div class="stat-value">${formatCurrency(total)}</div><div class="stat-label">Total Balance</div></div>
+            <div class="stat-card green"><div class="stat-icon">INC</div><div class="stat-value">${formatCurrency(summary.total_income || 0)}</div><div class="stat-label">Total Income</div></div>
+            <div class="stat-card red"><div class="stat-icon">EXP</div><div class="stat-value">${formatCurrency(summary.total_expenses || 0)}</div><div class="stat-label">Total Expenses</div></div>
         `;
                 // Quick actions
                 document.getElementById('quickActionsArea').innerHTML = `
@@ -539,8 +543,9 @@
                 const active = accounts.filter(a => a.is_active).length;
                 statsEl.innerHTML = `
             <div class="stat-card blue"><div class="stat-icon">AC</div><div class="stat-value">${accounts.length}</div><div class="stat-label">Total Accounts</div></div>
-            <div class="stat-card green"><div class="stat-icon">BAL</div><div class="stat-value">${formatCurrency(totalBal)}</div><div class="stat-label">Total Balance</div></div>
             <div class="stat-card gold"><div class="stat-icon">ACT</div><div class="stat-value">${active}</div><div class="stat-label">Active Accounts</div></div>
+            <div class="stat-card green"><div class="stat-icon">INC</div><div class="stat-value">${formatCurrency(summary.total_income || 0)}</div><div class="stat-label">Global Income</div></div>
+            <div class="stat-card red"><div class="stat-icon">EXP</div><div class="stat-value">${formatCurrency(summary.total_expenses || 0)}</div><div class="stat-label">Global Expenses</div></div>
         `;
                 if (currentUser.role === 'manager') {
                     try {
@@ -618,6 +623,7 @@
         <tr>
             <td>#${t.txn_id}</td>
             <td><span class="badge badge-${t.txn_type === 'deposit' ? 'green' : 'red'}">${t.txn_type}</span></td>
+            <td><span class="badge badge-blue">${t.category || 'General'}</span></td>
             <td class="${t.txn_type === 'deposit' ? 'amount-positive' : 'amount-negative'}">${t.txn_type === 'deposit' ? '+' : '-'}${formatCurrency(t.amount)}</td>
             <td style="color:var(--text-muted);font-size:0.82rem">${t.timestamp}</td>
             <td style="font-size:0.85rem">${t.description}</td>
@@ -629,7 +635,7 @@
             modal.innerHTML = `
         <h3>Transactions — Account #${accId}</h3>
         <div style="max-height:400px;overflow-y:auto">
-            <table class="data-table"><thead><tr><th>ID</th><th>Type</th><th>Amount</th><th>Date</th><th>Description</th></tr></thead>
+            <table class="data-table"><thead><tr><th>ID</th><th>Type</th><th>Category</th><th>Amount</th><th>Date</th><th>Description</th></tr></thead>
             <tbody>${rows}</tbody></table>
         </div>
         <div class="modal-actions"><button class="btn btn-sm btn-ghost" onclick="closeModal()">Close</button></div>
@@ -654,6 +660,14 @@
             <div class="form-group"><label>Account</label>
                 <select id="depositAcc">${activeAccounts.map(a => `<option value="${a.account_id}">#${a.account_id} — ${a.account_type.toUpperCase()} (${formatCurrency(a.balance)})</option>`).join('')}</select>
             </div>
+            <div class="form-group"><label>Category</label>
+                <select id="depositCategory">
+                    <option value="General">General</option>
+                    <option value="Salary">Salary</option>
+                    <option value="Investment">Investment</option>
+                    <option value="Gift">Gift</option>
+                </select>
+            </div>
             <div class="form-group"><label>Amount (₹)</label><input type="number" id="depositAmt" min="1" step="0.01" placeholder="Enter amount"></div>
             <button class="btn btn-success" onclick="doDeposit()" style="width:100%">Deposit</button>
         </div>
@@ -666,6 +680,7 @@
                     method: 'POST', body: {
                         account_id: +document.getElementById('depositAcc').value,
                         amount: +document.getElementById('depositAmt').value,
+                        category: document.getElementById('depositCategory').value || 'General'
                     }
                 });
                 showToast(`Deposited successfully! New balance: ${formatCurrency(data.new_balance)}`);
@@ -691,6 +706,15 @@
             <div class="form-group"><label>Account</label>
                 <select id="withdrawAcc">${activeAccounts.map(a => `<option value="${a.account_id}">#${a.account_id} — ${a.account_type.toUpperCase()} (${formatCurrency(a.balance)})</option>`).join('')}</select>
             </div>
+            <div class="form-group"><label>Category</label>
+                <select id="withdrawCategory">
+                    <option value="General">General</option>
+                    <option value="Groceries">Groceries</option>
+                    <option value="Utilities">Utilities</option>
+                    <option value="Rent">Rent</option>
+                    <option value="Entertainment">Entertainment</option>
+                </select>
+            </div>
             <div class="form-group"><label>Amount (₹)</label><input type="number" id="withdrawAmt" min="1" step="0.01" placeholder="Enter amount"></div>
             <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px"> Withdrawals ≥ ₹5,000 require accountant approval</p>
             <button class="btn btn-danger" onclick="doWithdraw()" style="width:100%">Withdraw</button>
@@ -704,6 +728,7 @@
                     method: 'POST', body: {
                         account_id: +document.getElementById('withdrawAcc').value,
                         amount: +document.getElementById('withdrawAmt').value,
+                        category: document.getElementById('withdrawCategory').value || 'General'
                     }
                 });
                 if (data.pending) showToast(data.message, 'warning');
@@ -753,6 +778,15 @@
                         <img id="scannedQRImg" src="" style="max-width: 150px; border-radius: 4px; border: 1px solid var(--border-light); padding: 5px; background: white;" />
                     </div>
 
+                    <div class="form-group"><label>Category</label>
+                        <select id="transferCategory">
+                            <option value="General">General</option>
+                            <option value="Family">Family / Friends</option>
+                            <option value="Bill Payment">Bill Payment</option>
+                            <option value="Investment">Investment</option>
+                        </select>
+                    </div>
+
                     <div class="form-group"><label>Amount (₹)</label><input type="number" id="transferAmt" min="1" step="0.01" placeholder="Enter amount"></div>
                     
                     <div class="form-group" id="saveBenGroup" style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
@@ -788,6 +822,7 @@
             const toId = +document.getElementById('toAccount').value;
             const amount = +document.getElementById('transferAmt').value;
             const saveBen = document.getElementById('saveBen').checked;
+            const category = document.getElementById('transferCategory').value || 'General';
 
             if (!toId || amount <= 0) { showToast('Please enter valid account ID and amount', 'error'); return; }
             if (fromId === toId) { showToast('Source and destination accounts must be different', 'error'); return; }
@@ -800,20 +835,21 @@
                     <h3>Confirm Transfer</h3>
                     <p style="margin:16px 0;font-size:0.95rem">Are you sure you want to send <strong style="font-size:1.2rem">${formatCurrency(amount)}</strong> to Account <strong style="font-size:1.2rem">#${toId}</strong>?</p>
                     ${amount >= 50000 ? '<div class="alert alert-warning" style="margin-bottom:16px;font-size:0.85rem">Large transfer detected. This may require additional verification.</div>' : ''}
-                    <button class="btn btn-primary" onclick="doTransfer(${fromId}, ${toId}, ${amount}, ${saveBen})" style="width:100%">Confirm & Send</button>
+                    <button class="btn btn-primary" onclick="doTransfer(${fromId}, ${toId}, ${amount}, ${saveBen}, '${category}')" style="width:100%">Confirm & Send</button>
                     <button class="btn btn-ghost" onclick="closeModal()" style="width:100%;margin-top:8px">Cancel</button>
                 </div>
             `;
             document.getElementById('modalOverlay').classList.add('visible');
         }
 
-        async function doTransfer(src, dst, amt, saveBen) {
+        async function doTransfer(src, dst, amt, saveBen, category='General') {
             try {
                 const data = await api('/api/transfer', {
                     method: 'POST', body: {
                         src_id: src,
                         dst_id: dst,
-                        amount: amt
+                        amount: amt,
+                        category: category
                     }
                 });
 
@@ -1067,11 +1103,12 @@
             }
             container.innerHTML = `
         <div class="table-card"><div class="table-header"><h3>${title}</h3></div>
-        <table class="data-table"><thead><tr><th>ID</th><th>Acc #</th><th>Type</th><th>Amount</th><th>Date</th><th>Description</th><th>Status</th><th></th></tr></thead>
+        <table class="data-table"><thead><tr><th>ID</th><th>Acc #</th><th>Type</th><th>Category</th><th>Amount</th><th>Date</th><th>Description</th><th>Status</th><th></th></tr></thead>
         <tbody>${txns.map(t => `<tr>
             <td>#${t.txn_id}</td>
             <td>#${t.account_id}</td>
             <td><span class="badge badge-${t.txn_type === 'deposit' ? 'green' : t.txn_type === 'withdrawal' ? 'red' : 'blue'}">${t.txn_type}</span></td>
+            <td><span class="badge badge-blue">${t.category || 'General'}</span></td>
             <td class="${t.txn_type === 'deposit' ? 'amount-positive' : 'amount-negative'}">${t.txn_type === 'deposit' ? '+' : '-'}${formatCurrency(t.amount)}</td>
             <td style="color:var(--text-muted);font-size:0.82rem">${t.timestamp}</td>
             <td style="font-size:0.85rem">${t.description}</td>
@@ -2329,7 +2366,7 @@
                     <div style="background:linear-gradient(135deg, #0f172a, #1e293b);border-radius:16px;padding:24px;color:white;position:relative;overflow:hidden;box-shadow:0 10px 25px -5px rgba(0,0,0,0.2)">
                         <div style="position:absolute;top:-20px;right:-20px;width:150px;height:150px;background:radial-gradient(circle, rgba(20,184,166,0.15) 0%, transparent 70%);border-radius:50%"></div>
                         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px">
-                            <div style="font-weight:600;letter-spacing:1px;color:#94a3b8">APEX TRUST</div>
+                            <div style="font-weight:600;letter-spacing:1px;color:#94a3b8">ZENRUPEE</div>
                             <svg width="32" height="24" viewBox="0 0 32 24" fill="none"><rect width="32" height="24" rx="4" fill="#cbd5e1" fill-opacity="0.2"/><circle cx="10" cy="12" r="6" fill="#ef4444" fill-opacity="0.8"/><circle cx="22" cy="12" r="6" fill="#f59e0b" fill-opacity="0.8"/></svg>
                         </div>
                         <div style="font-family:monospace;font-size:1.2rem;letter-spacing:2px;margin-bottom:16px">

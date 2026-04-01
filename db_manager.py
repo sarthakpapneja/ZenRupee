@@ -54,6 +54,7 @@ def init_customers_db():
             account_id        INTEGER NOT NULL,
             txn_type          TEXT    NOT NULL,
             amount            REAL    NOT NULL,
+            category          TEXT    DEFAULT 'General',
             timestamp         TEXT    DEFAULT (datetime('now','localtime')),
             description       TEXT    DEFAULT '',
             status            TEXT    DEFAULT 'completed',
@@ -149,6 +150,12 @@ def init_customers_db():
     columns = [row["name"] for row in cursor.fetchall()]
     if "qr_code" not in columns:
         conn.execute("ALTER TABLE accounts ADD COLUMN qr_code TEXT DEFAULT NULL")
+
+    # Migration: Add category to transactions if missing
+    cursor = conn.execute("PRAGMA table_info(transactions)")
+    txn_columns = [row["name"] for row in cursor.fetchall()]
+    if "category" not in txn_columns:
+        conn.execute("ALTER TABLE transactions ADD COLUMN category TEXT DEFAULT 'General'")
 
     conn.commit()
     conn.close()
@@ -525,14 +532,15 @@ def close_account(account_id: int):
 
 def add_transaction(account_id: int, txn_type: str, amount: float,
                     description: str = "", status: str = "completed",
-                    target_account_id: Optional[int] = None) -> int:
+                    target_account_id: Optional[int] = None,
+                    category: str = "General") -> int:
     """Record a transaction."""
     conn = get_connection("customers")
     cursor = conn.cursor()
     cursor.execute(
-        """INSERT INTO transactions (account_id, txn_type, amount, description, status, target_account_id)
-           VALUES (?, ?, ?, ?, ?, ?)""",
-        (account_id, txn_type, amount, description, status, target_account_id)
+        """INSERT INTO transactions (account_id, txn_type, amount, category, description, status, target_account_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (account_id, txn_type, amount, category, description, status, target_account_id)
     )
     conn.commit()
     txn_id = cursor.lastrowid
@@ -561,6 +569,101 @@ def get_all_transactions(limit: int = 50) -> list:
     rows = cursor.fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+def update_transaction(txn_id: int, amount: float, category: str, description: str, txn_type: str):
+    """Update a financial record (transaction)."""
+    conn = get_connection("customers")
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE transactions SET amount = ?, category = ?, description = ?, txn_type = ? WHERE txn_id = ?",
+        (amount, category, description, txn_type, txn_id)
+    )
+    conn.commit()
+    conn.close()
+
+def delete_transaction(txn_id: int):
+    """Delete a financial record."""
+    conn = get_connection("customers")
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM transactions WHERE txn_id = ?", (txn_id,))
+    conn.commit()
+    conn.close()
+
+def get_transactions_filtered(user_id=None, category=None, txn_type=None, start_date=None, end_date=None) -> list:
+    """Get transactions with filters."""
+    conn = get_connection("customers")
+    cursor = conn.cursor()
+    
+    query = "SELECT t.* FROM transactions t "
+    params = []
+    
+    if user_id is not None:
+        query += "JOIN accounts a ON t.account_id = a.account_id WHERE a.user_id = ? "
+        params.append(user_id)
+    else:
+        query += "WHERE 1=1 "
+        
+    if category:
+        query += "AND t.category = ? "
+        params.append(category)
+    if txn_type:
+        query += "AND t.txn_type = ? "
+        params.append(txn_type)
+    if start_date:
+        query += "AND date(t.timestamp) >= date(?) "
+        params.append(start_date)
+    if end_date:
+        query += "AND date(t.timestamp) <= date(?) "
+        params.append(end_date)
+        
+    query += "ORDER BY t.timestamp DESC"
+    cursor.execute(query, tuple(params))
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def get_dashboard_summary(user_id=None) -> dict:
+    """Get summarized analytics for the dashboard."""
+    conn = get_connection("customers")
+    cursor = conn.cursor()
+    
+    base_join = "JOIN accounts a ON t.account_id = a.account_id" if user_id else ""
+    where_clause = "WHERE a.user_id = ?" if user_id else "WHERE 1=1"
+    params = (user_id,) if user_id else ()
+    
+    # Total Income (deposits) & Total Expenses (withdrawals/transfers out)
+    cursor.execute(f"SELECT SUM(amount) FROM transactions t {base_join} {where_clause} AND t.txn_type='deposit'", params)
+    income_val = cursor.fetchone()[0]
+    total_income = income_val if income_val else 0.0
+    
+    cursor.execute(f"SELECT SUM(amount) FROM transactions t {base_join} {where_clause} AND t.txn_type IN ('withdrawal', 'transfer')", params)
+    expense_val = cursor.fetchone()[0]
+    total_expenses = expense_val if expense_val else 0.0
+    
+    net_balance = total_income - total_expenses
+    
+    # Category totals
+    cursor.execute(f"SELECT t.category, SUM(t.amount) as total FROM transactions t {base_join} {where_clause} GROUP BY t.category", params)
+    categories = [{"category": r["category"], "total": r["total"]} for r in cursor.fetchall()]
+    
+    # Monthly Trends (last 6 months)
+    cursor.execute(f"SELECT strftime('%Y-%m', t.timestamp) as month, SUM(CASE WHEN t.txn_type='deposit' THEN t.amount ELSE 0 END) as income, SUM(CASE WHEN t.txn_type IN ('withdrawal', 'transfer') THEN t.amount ELSE 0 END) as expense FROM transactions t {base_join} {where_clause} GROUP BY month ORDER BY month DESC LIMIT 6", params)
+    monthly_trends = [{"month": r["month"], "income": r["income"], "expense": r["expense"]} for r in cursor.fetchall()]
+    
+    # Recent Activity (last 5)
+    cursor.execute(f"SELECT t.* FROM transactions t {base_join} {where_clause} ORDER BY t.timestamp DESC LIMIT 5", params)
+    recent = [dict(r) for r in cursor.fetchall()]
+    
+    conn.close()
+    
+    return {
+        "total_income": total_income,
+        "total_expenses": total_expenses,
+        "net_balance": net_balance,
+        "category_totals": categories,
+        "monthly_trends": list(reversed(monthly_trends)),  # Chronological
+        "recent_activity": recent
+    }
 
 
 # ─────────────────────────────────────────────

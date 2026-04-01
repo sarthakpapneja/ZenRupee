@@ -200,9 +200,11 @@ def api_deposit():
     if amount <= 0:
         return jsonify({"error": "Amount must be positive"}), 400
 
+    category = data.get("category", "Deposit")
+    
     new_balance = account["balance"] + amount
     db_manager.update_balance(account_id, new_balance)
-    db_manager.add_transaction(account_id, "deposit", amount, f"Deposit by {user['username']} (web)")
+    db_manager.add_transaction(account_id, "deposit", amount, f"Deposit by {user['username']} (web)", category=category)
     db_manager.add_audit_log("DEPOSIT", user["username"], account_id, f"₹{amount:,.2f} deposited (web)")
 
     # Notify user
@@ -239,9 +241,11 @@ def api_withdraw():
         db_manager.notify_staff(f"New large withdrawal request of ₹{amount:,.2f} from Account #{account_id}.")
         return jsonify({"success": True, "pending": True, "message": "Large withdrawal requires accountant approval. Request submitted."})
 
+    category = data.get("category", "Withdrawal")
+
     new_balance = account["balance"] - amount
     db_manager.update_balance(account_id, new_balance)
-    db_manager.add_transaction(account_id, "withdrawal", amount, f"Withdrawal by {user['username']} (web)")
+    db_manager.add_transaction(account_id, "withdrawal", amount, f"Withdrawal by {user['username']} (web)", category=category)
     db_manager.add_audit_log("WITHDRAWAL", user["username"], account_id, f"₹{amount:,.2f} withdrawn (web)")
 
     # Notify user
@@ -286,10 +290,12 @@ def api_transfer():
         db_manager.notify_staff(f"New large transfer request of ₹{amount:,.2f} from Account #{src_id} to Account #{dst_id}.")
         return jsonify({"success": True, "pending": True, "message": "Large transfer requires approval. Request submitted."})
 
+    category = data.get("category", "Transfer")
+
     db_manager.update_balance(src_id, src["balance"] - amount)
     db_manager.update_balance(dst_id, dst["balance"] + amount)
-    db_manager.add_transaction(src_id, "transfer", amount, f"Transfer to #{dst_id} (web)", "completed", dst_id)
-    db_manager.add_transaction(dst_id, "deposit", amount, f"Transfer from #{src_id} (web)", "completed", src_id)
+    db_manager.add_transaction(src_id, "transfer", amount, f"Transfer to #{dst_id} (web)", "completed", dst_id, category=category)
+    db_manager.add_transaction(dst_id, "deposit", amount, f"Transfer from #{src_id} (web)", "completed", src_id, category=category)
     db_manager.add_audit_log("TRANSFER", user["username"], src_id, f"₹{amount:,.2f} → #{dst_id} (web)")
 
     # Notify both participants
@@ -297,32 +303,6 @@ def api_transfer():
     db_manager.add_notification(dst["user_id"], f"Received ₹{amount:,.2f} from Account #{src_id}.", "success")
 
     return jsonify({"success": True, "new_balance": src["balance"] - amount})
-
-
-@app.route("/api/loan/apply", methods=["POST"])
-@role_required("customer")
-def api_loan_apply():
-    data = request.json
-    account_id = data.get("account_id")
-    amount = data.get("amount", 0)
-    term_months = data.get("term_months", 12)  # Default 12 months if not provided
-
-    account = db_manager.get_account_by_id(account_id)
-    if not account:
-        return jsonify({"error": "Account not found"}), 404
-
-    user = session["user"]
-    if account["user_id"] != user["user_id"]:
-        return jsonify({"error": "Access denied"}), 403
-
-    if amount <= 0:
-        return jsonify({"error": "Loan amount must be positive"}), 400
-
-    db_manager.create_request(account_id, "loan", amount, f"Loan application by {user['username']} (web) | Term: {term_months} months")
-    db_manager.add_audit_log("LOAN_REQUEST", user["username"], account_id, f"₹{amount:,.2f} — pending (web)")
-    db_manager.notify_staff(f"New loan application of ₹{amount:,.2f} from Account #{account_id}.")
-
-    return jsonify({"success": True, "message": "Loan application submitted successfully. Pending accountant approval."})
 
 
 # ─────────────────────────────────────────────
@@ -420,132 +400,8 @@ def api_process_request(request_id):
     return jsonify({"error": "Invalid action"}), 400
 
 # ─────────────────────────────────────────────
-# LOAN SPECIFIC API
 # ─────────────────────────────────────────────
-
-@app.route("/api/loans")
-@role_required("customer", "accountant", "manager")
-def api_loans():
-    user = session["user"]
-    if user["role"] == "customer":
-        import re
-        # 1. Get Loan Requests (History)
-        requests = db_manager.get_customer_loans(user["user_id"])
-        mapped_reqs = []
-        for r in requests:
-            # Try to extract tenure from details: "Loan application ... | Term: 12 months"
-            tenure = None
-            details = r.get("details", "")
-            match = re.search(r"Term:\s*(\d+)", details)
-            if match:
-                tenure = int(match.group(1))
-            
-            mapped_reqs.append({
-                "loan_id": r["request_id"],
-                "status": r["status"], # pending, approved, rejected
-                "loan_amount": r["amount"],
-                "created_at": r["created_at"],
-                "tenure_months": tenure,
-                "emi_amount": None,
-                "interest_rate": 10.5,
-                "total_paid": 0.0
-            })
-            
-        # 2. Get Active Loans (Live)
-        active_loans = []
-        accounts = db_manager.get_accounts_by_user(user["user_id"])
-        for acc in accounts:
-            l_list = db_manager.get_active_loans_by_account(acc["account_id"])
-            for l in l_list:
-                active_loans.append({
-                    "loan_id": l["loan_id"],
-                    "status": "active",
-                    "loan_amount": l["principal"],
-                    "created_at": l["created_at"],
-                    "tenure_months": l["term_months"],
-                    "emi_amount": l["next_emi_amount"],
-                    "interest_rate": l["interest_rate"],
-                    "total_paid": l["total_cost_with_interest"] - l["remaining_balance"],
-                    "remaining_balance": l["remaining_balance"]
-                })
-        
-        # Combine: Active loans first, then history
-        return jsonify(active_loans + mapped_reqs)
-    elif user["role"] == "accountant":
-        return jsonify(db_manager.get_pending_accountant_loans())
-    elif user["role"] == "manager":
-        return jsonify(db_manager.get_pending_manager_loans())
-    return jsonify([])
-
-@app.route("/api/loans/<int:request_id>/process", methods=["POST"])
-@role_required("accountant", "manager")
-def api_loan_process(request_id):
-    data = request.json
-    action = data.get("action")
-    user = session["user"]
-
-    if user["role"] == "accountant":
-        requests_list = db_manager.get_pending_accountant_loans()
-    elif user["role"] == "manager":
-        requests_list = db_manager.get_pending_manager_loans()
-    else:
-        requests_list = []
-
-    target = None
-    for r in requests_list:
-        if r["request_id"] == request_id:
-            target = r
-            break
-
-    if not target:
-        return jsonify({"error": "Loan request not found or already processed"}), 404
-
-    if action == "approve":
-        account = db_manager.get_account_by_id(target["account_id"])
-        if not account:
-            return jsonify({"error": "Account not found"}), 404
-
-        if user["role"] == "accountant" and target["status"] == "pending":
-            db_manager.update_request_status(request_id, "pending_manager", user["username"])
-            db_manager.add_audit_log("LOAN_APPROVED_ACC", user["username"], target["account_id"],
-                                     f"Loan Req #{request_id} approved by accountant")
-            return jsonify({"success": True, "message": f"Loan #{request_id} forwarded to manager"})
-
-        elif user["role"] == "manager" and target["status"] == "pending_manager":
-            db_manager.update_request_status(request_id, "approved", user["username"])
-            
-            term_months = 12
-            if "Term:" in target["details"]:
-                try:
-                    term_months = int(target["details"].split("Term: ")[1].split()[0])
-                except:
-                    pass
-
-            principal = target["amount"]
-            interest_rate = 8.0
-            total_interest = principal * (interest_rate / 100) * (term_months / 12)
-            total_cost = principal + total_interest
-            emi = total_cost / term_months
-
-            db_manager.create_active_loan(target["account_id"], principal, interest_rate, term_months, total_cost, emi)
-
-            new_bal = account["balance"] + principal
-            db_manager.update_balance(target["account_id"], new_bal)
-            db_manager.add_transaction(target["account_id"], "deposit", principal,
-                                       f"Loan Approved (Req #{request_id}) by {user['username']}")
-            db_manager.add_audit_log("LOAN_APPROVED_MGR", user["username"], target["account_id"],
-                                     f"Loan Req #{request_id} finally approved")
-            
-            db_manager.create_security_alert(account["user_id"], f"Your loan application for ₹{principal:,.2f} has been fully approved and credited to your account.", "success")
-            
-            return jsonify({"success": True, "message": f"Loan #{request_id} fully approved and credited"})
-
-    elif action == "reject":
-        db_manager.update_request_status(request_id, "rejected", user["username"])
-        db_manager.add_audit_log("LOAN_REJECTED", user["username"], target["account_id"], f"Loan Req #{request_id} rejected")
-        return jsonify({"success": True, "message": f"Loan #{request_id} rejected"})
-
-    return jsonify({"error": "Invalid action"}), 400
+# TRANSACTIONS API
 
 
 @app.route("/api/active_loans", methods=["GET"])
@@ -620,6 +476,73 @@ def api_audit_logs():
 @role_required("accountant", "manager")
 def api_all_transactions():
     return jsonify(db_manager.get_all_transactions(100))
+
+@app.route("/api/transactions", methods=["GET"])
+@login_required
+def api_get_transactions_filtered():
+    user = session["user"]
+    category = request.args.get("category")
+    txn_type = request.args.get("txn_type")
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+
+    # If accountant/manager and no specific user constraint is requested, fetch all
+    user_id_filter = None
+    if user["role"] == "customer":
+        user_id_filter = user["user_id"]
+    
+    txns = db_manager.get_transactions_filtered(user_id=user_id_filter, category=category, txn_type=txn_type, start_date=start_date, end_date=end_date)
+    return jsonify(txns)
+
+@app.route("/api/transactions", methods=["POST"])
+@role_required("manager")
+def api_create_transaction():
+    """Explicitly create a record (Admin functionality)"""
+    data = request.json
+    account_id = data.get("account_id")
+    txn_type = data.get("txn_type")
+    amount = data.get("amount", 0)
+    category = data.get("category", "General")
+    description = data.get("description", "Manual record creation")
+    
+    if not account_id or not txn_type or amount <= 0:
+        return jsonify({"error": "Invalid input"}), 400
+        
+    db_manager.add_transaction(account_id, txn_type, amount, description, category=category)
+    return jsonify({"success": True, "message": "Record created"})
+
+@app.route("/api/transactions/<int:txn_id>", methods=["PUT"])
+@role_required("manager")
+def api_update_transaction(txn_id):
+    data = request.json
+    amount = data.get("amount")
+    category = data.get("category")
+    description = data.get("description")
+    txn_type = data.get("txn_type")
+    
+    if None in (amount, category, description, txn_type):
+        return jsonify({"error": "Missing fields"}), 400
+        
+    db_manager.update_transaction(txn_id, amount, category, description, txn_type)
+    return jsonify({"success": True, "message": "Record updated"})
+
+@app.route("/api/transactions/<int:txn_id>", methods=["DELETE"])
+@role_required("manager")
+def api_delete_transaction(txn_id):
+    db_manager.delete_transaction(txn_id)
+    return jsonify({"success": True, "message": "Record deleted"})
+
+@app.route("/api/dashboard/summary", methods=["GET"])
+@login_required
+def api_dashboard_summary():
+    user = session["user"]
+    if user["role"] == "customer":
+        # Specific user stats
+        stats = db_manager.get_dashboard_summary(user_id=user["user_id"])
+    else:
+        # Analyst / Admin global stats
+        stats = db_manager.get_dashboard_summary()
+    return jsonify(stats)
 
 
 # ─────────────────────────────────────────────
@@ -1000,7 +923,7 @@ def api_mini_statement(account_id):
             <td>{t['status'].upper()}</td>
         </tr>"""
 
-    html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>Apex Trust Bank — Statement</title>
+    html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>ZenRupee — Statement</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
       body{{font-family:'Inter',sans-serif;padding:40px;color:#1a1a2e;max-width:800px;margin:0 auto}}
@@ -1026,8 +949,8 @@ def api_mini_statement(account_id):
       @media print{{body{{padding:20px}} .bank-stamp{{opacity:0.5}}}}
     </style></head><body>
     <div class="header">
-      <img src="{LOGO_B64}" alt="Apex Trust Bank">
-      <h1>Apex Trust Bank</h1>
+      <img src="{LOGO_B64}" alt="ZenRupee">
+      <h1>ZenRupee</h1>
       <p class="subtitle">Account Statement</p>
       <p class="subtitle">{period_label}</p>
       <p class="subtitle">Generated on {now}</p>
@@ -1042,11 +965,11 @@ def api_mini_statement(account_id):
     <table><thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
     <tbody>{rows if rows else '<tr><td colspan="5" style="text-align:center;padding:20px">No transactions found</td></tr>'}</tbody></table>
     <div class="stamp-container"><div class="bank-stamp">
-      <img src="{LOGO_B64}" alt=""><div class="stamp-title">APEX TRUST BANK</div>
+      <img src="{LOGO_B64}" alt=""><div class="stamp-title">ZENRUPEE</div>
       <div class="stamp-sub">Authorised Statement</div>
     </div></div>
     <div class="footer"><p>This is a computer-generated statement and does not require a signature.</p>
-    <p>Apex Trust Bank &middot; Secure &middot; Reliable &middot; Trusted</p></div></body></html>"""
+    <p>ZenRupee &middot; Secure &middot; Reliable &middot; Trusted</p></div></body></html>"""
 
     return html, 200, {"Content-Type": "text/html"}
 
@@ -1068,7 +991,7 @@ def api_transaction_receipt(txn_id):
     color = "#16a34a" if txn["txn_type"] == "deposit" else "#dc2626"
     sign = "+" if txn["txn_type"] == "deposit" else "-"
 
-    html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>Apex Trust Bank — Receipt</title>
+    html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>ZenRupee — Receipt</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
       body{{font-family:'Inter',sans-serif;padding:40px;color:#1a1a2e;max-width:500px;margin:0 auto}}
@@ -1092,8 +1015,8 @@ def api_transaction_receipt(txn_id):
     </style></head><body>
     <div class="receipt">
       <div class="header">
-        <img src="{LOGO_B64}" alt="Apex Trust Bank">
-        <h2>Apex Trust Bank</h2>
+        <img src="{LOGO_B64}" alt="ZenRupee">
+        <h2>ZenRupee</h2>
         <p>Transaction Receipt</p><p>{now}</p>
       </div>
       <div class="amount">{sign}₹{txn['amount']:,.2f}</div>
@@ -1109,9 +1032,9 @@ def api_transaction_receipt(txn_id):
       <div class="stamp-container"><div class="bank-stamp">
         <img src="{LOGO_B64}" alt="">
         <div class="stamp-status">{txn['status'].upper()}</div>
-        <div class="stamp-bank">APEX TRUST BANK</div>
+        <div class="stamp-bank">ZENRUPEE</div>
       </div></div>
-      <div class="footer"><p>This is a computer-generated receipt.</p><p>Apex Trust Bank</p></div>
+      <div class="footer"><p>This is a computer-generated receipt.</p><p>ZenRupee</p></div>
     </div></body></html>"""
 
     return html, 200, {"Content-Type": "text/html"}
@@ -1470,7 +1393,7 @@ def api_profile_avatar():
 
 if __name__ == "__main__":
     db_manager.init_all_databases()
-    print("\n  Apex Trust Bank — Web Server")
+    print("\n  ZenRupee — Web Server")
     print("  http://localhost:5005\n")
     app.run(debug=True, host="0.0.0.0", port=5005, use_reloader=False)
 
