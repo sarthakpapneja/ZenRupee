@@ -1,5 +1,7 @@
 # Databases
 data/*.db
+*.db
+server_logs.txt
 
 # Python
 __pycache__/
