@@ -371,7 +371,38 @@ def api_process_request(request_id):
 
         db_manager.update_request_status(request_id, "approved", user["username"])
 
-        if account:
+        if target["request_type"] == "user_creation":
+            # Parse user data from details JSON
+            import json
+            try:
+                user_data = json.loads(target["details"])
+            except:
+                return jsonify({"error": "Invalid user creation data"}), 400
+            
+            if db_manager.get_user_by_username(user_data["username"]):
+                return jsonify({"error": "Username already exists"}), 400
+            
+            uid = db_manager.create_user(user_data["username"], hash_password(user_data["password"]), user_data["role"], user_data["full_name"])
+            
+            if user_data["role"] == "customer":
+                acc_type = user_data.get("account_type", "savings")
+                balance = float(user_data.get("balance", 0))
+                acc_id = db_manager.create_account(
+                    customer_name=user_data["full_name"],
+                    email=user_data.get("email", f"{user_data['username']}@bank.com"),
+                    phone=user_data.get("phone", "0000000000"),
+                    balance=balance,
+                    account_type=acc_type,
+                    user_id=uid
+                )
+                db_manager.add_system_log("ACCOUNT_CREATED", user["user_id"],
+                    f"Auto-created {acc_type} account #{acc_id} for new customer '{user_data['username']}' (approved by {user['username']})")
+            
+            db_manager.add_system_log("USER_CREATED", user["user_id"], f"Approved creation of {user_data['role']}: {user_data['username']} (requested by accountant)")
+            db_manager.add_audit_log("USER_CREATION_APPROVED", user["username"], 0, f"Req #{request_id}: Created user '{user_data['username']}' ({user_data['role']})")
+            return jsonify({"success": True, "message": f"User '{user_data['username']}' created successfully"})
+
+        elif account:
             if target["request_type"] in ("large_withdrawal", "large_transfer"):
                 new_bal = account["balance"] - target["amount"]
                 if new_bal >= 0:
@@ -384,7 +415,6 @@ def api_process_request(request_id):
             elif target["request_type"] == "account_close":
                 db_manager.close_account(target["account_id"])
             elif target["request_type"] == "credit_card":
-                # Create credit card with 15% APR as default
                 c_id = db_manager.create_credit_card(target["account_id"], target["amount"], 15.0)
                 db_manager.create_security_alert(account["user_id"], f"Your credit card application for a limit of ₹{target['amount']:,.2f} has been approved!", "success")
 
@@ -587,6 +617,45 @@ def api_create_user():
 
     db_manager.add_system_log("USER_CREATED", user["user_id"], f"Created {data['role']}: {data['username']} (web)")
     return jsonify({"success": True, "user_id": uid})
+
+
+@app.route("/api/users/request-create", methods=["POST"])
+@role_required("accountant")
+def api_request_create_user():
+    """Accountant submits a user creation request that requires manager approval."""
+    import json
+    data = request.json
+    user = session["user"]
+
+    username = data.get("username")
+    password = data.get("password")
+    full_name = data.get("full_name")
+    role = data.get("role", "customer")
+
+    if not username or not password or not full_name:
+        return jsonify({"error": "Username, password, and full name are required"}), 400
+
+    if db_manager.get_user_by_username(username):
+        return jsonify({"error": "Username already exists"}), 400
+
+    # Store user details as JSON in the request details field
+    user_details = json.dumps({
+        "username": username,
+        "password": password,
+        "full_name": full_name,
+        "role": role,
+        "email": data.get("email", f"{username}@bank.com"),
+        "phone": data.get("phone", "0000000000"),
+        "account_type": data.get("account_type", "savings"),
+        "balance": data.get("balance", 0),
+        "requested_by": user["username"]
+    })
+
+    req_id = db_manager.create_request(0, "user_creation", 0, user_details)
+    db_manager.add_audit_log("USER_CREATION_REQUESTED", user["username"], 0, f"Accountant requested creation of {role}: {username}")
+    db_manager.notify_staff(f"Accountant {user['username']} has requested creation of a new {role} user: {full_name} ({username}). Manager approval required.")
+
+    return jsonify({"success": True, "request_id": req_id, "message": "User creation request submitted. Awaiting manager approval."})
 
 
 @app.route("/api/users/create_with_account", methods=["POST"])
