@@ -921,3 +921,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         console.print("\n[yellow]Session terminated. Goodbye! 👋[/]")
         sys.exit(0)
+

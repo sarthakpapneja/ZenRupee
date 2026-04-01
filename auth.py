@@ -129,3 +129,4 @@ def require_permission(session: Session, permission: str) -> bool:
     if not has_permission(session, permission):
         return False
     return True
+
