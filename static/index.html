@@ -1804,7 +1804,7 @@
 
         async function payEmi(id) {
             try {
-                await api(`/api/loans/${id}/pay-emi`, { method: 'POST' });
+                await api('/api/loan/pay', { method: 'POST', body: { loan_id: id } });
                 showToast('EMI paid successfully!');
                 renderLoans(document.getElementById('contentArea'));
             } catch (e) { showToast(e.message, 'error'); }
