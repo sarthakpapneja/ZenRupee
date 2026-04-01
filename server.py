@@ -204,13 +204,13 @@ def api_deposit():
     
     new_balance = account["balance"] + amount
     db_manager.update_balance(account_id, new_balance)
-    db_manager.add_transaction(account_id, "deposit", amount, f"Deposit by {user['username']} (web)", category=category)
+    txn_id = db_manager.add_transaction(account_id, "deposit", amount, f"Deposit by {user['username']} (web)", category=category)
     db_manager.add_audit_log("DEPOSIT", user["username"], account_id, f"₹{amount:,.2f} deposited (web)")
 
     # Notify user
     db_manager.add_notification(account["user_id"], f"₹{amount:,.2f} has been deposited into your account #{account_id}. New balance: ₹{new_balance:,.2f}", "success")
 
-    return jsonify({"success": True, "new_balance": new_balance})
+    return jsonify({"success": True, "new_balance": new_balance, "txn_id": txn_id})
 
 
 @app.route("/api/withdraw", methods=["POST"])
@@ -245,7 +245,7 @@ def api_withdraw():
 
     new_balance = account["balance"] - amount
     db_manager.update_balance(account_id, new_balance)
-    db_manager.add_transaction(account_id, "withdrawal", amount, f"Withdrawal by {user['username']} (web)", category=category)
+    txn_id = db_manager.add_transaction(account_id, "withdrawal", amount, f"Withdrawal by {user['username']} (web)", category=category)
     db_manager.add_audit_log("WITHDRAWAL", user["username"], account_id, f"₹{amount:,.2f} withdrawn (web)")
 
     # Notify user
@@ -253,7 +253,7 @@ def api_withdraw():
     if new_balance < 1000:
         db_manager.add_notification(account["user_id"], f"Low balance alert! Your account #{account_id} balance is ₹{new_balance:,.2f}.", "error")
 
-    return jsonify({"success": True, "new_balance": new_balance})
+    return jsonify({"success": True, "new_balance": new_balance, "txn_id": txn_id})
 
 
 @app.route("/api/transfer", methods=["POST"])
@@ -294,7 +294,7 @@ def api_transfer():
 
     db_manager.update_balance(src_id, src["balance"] - amount)
     db_manager.update_balance(dst_id, dst["balance"] + amount)
-    db_manager.add_transaction(src_id, "transfer", amount, f"Transfer to #{dst_id} (web)", "completed", dst_id, category=category)
+    txn_id = db_manager.add_transaction(src_id, "transfer", amount, f"Transfer to #{dst_id} (web)", "completed", dst_id, category=category)
     db_manager.add_transaction(dst_id, "deposit", amount, f"Transfer from #{src_id} (web)", "completed", src_id, category=category)
     db_manager.add_audit_log("TRANSFER", user["username"], src_id, f"₹{amount:,.2f} → #{dst_id} (web)")
 
@@ -302,7 +302,7 @@ def api_transfer():
     db_manager.add_notification(src["user_id"], f"Sent ₹{amount:,.2f} to Account #{dst_id}.", "warning")
     db_manager.add_notification(dst["user_id"], f"Received ₹{amount:,.2f} from Account #{src_id}.", "success")
 
-    return jsonify({"success": True, "new_balance": src["balance"] - amount})
+    return jsonify({"success": True, "new_balance": src["balance"] - amount, "txn_id": txn_id})
 
 
 # ─────────────────────────────────────────────
