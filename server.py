@@ -331,15 +331,11 @@ def api_read_alert(alert_id):
 def api_requests():
     user = session["user"]
     if user["role"] == "manager":
-        # Managers see all non-loan requests pending manager approval
-        all_reqs = db_manager.get_pending_requests()
-        # The new get_pending_requests and get_pending_manager_requests already exclude loans.
-        # But wait, a manager is supposed to approve all accountants' approved requests? 
-        # For non-loans, currently only accountants approve them completely (1 step).
-        # Ah, the original code had:
-        return jsonify(db_manager.get_pending_requests())
+        # Managers see both accountant-level and manager-level requests
+        reqs = db_manager.get_pending_requests() + db_manager.get_pending_manager_requests()
+        return jsonify(reqs)
     else:
-        # Accountants see all requests pending accountant approval, excluding loans
+        # Accountants only see requests pending accountant approval
         return jsonify(db_manager.get_pending_requests())
 
 
@@ -356,15 +352,16 @@ def api_process_request(request_id):
     action = data.get("action")  # approve or reject
     user = session["user"]
 
-    requests_list = db_manager.get_pending_requests()
-    target = None
-    for r in requests_list:
-        if r["request_id"] == request_id:
-            target = r
-            break
+    # Search both accountant and manager pending queues
+    all_reqs = db_manager.get_pending_requests() + db_manager.get_pending_manager_requests()
+    target = next((r for r in all_reqs if r["request_id"] == request_id), None)
 
     if not target:
         return jsonify({"error": "Request not found or already processed"}), 404
+
+    # Security: Only managers can approve/reject user creation requests
+    if target["request_type"] == "user_creation" and user["role"] != "manager":
+        return jsonify({"error": "Only Managers can process user creation requests"}), 403
 
     if action == "approve":
         account = db_manager.get_account_by_id(target["account_id"])
@@ -651,7 +648,7 @@ def api_request_create_user():
         "requested_by": user["username"]
     })
 
-    req_id = db_manager.create_request(0, "user_creation", 0, user_details)
+    req_id = db_manager.create_request(0, "user_creation", 0, user_details, status="pending_manager")
     db_manager.add_audit_log("USER_CREATION_REQUESTED", user["username"], 0, f"Accountant requested creation of {role}: {username}")
     db_manager.notify_staff(f"Accountant {user['username']} has requested creation of a new {role} user: {full_name} ({username}). Manager approval required.")
 

@@ -804,14 +804,14 @@ def record_loan_emi_payment(loan_id: int, amount_paid: float):
 # PENDING REQUESTS (accountants.db)
 # ─────────────────────────────────────────────
 
-def create_request(account_id: int, request_type: str, amount: float, details: str = "") -> int:
-    """Create a pending request for accountant review."""
+def create_request(account_id: int, request_type: str, amount: float, details: str = "", status: str = "pending") -> int:
+    """Create a pending request for accountant or manager review."""
     conn = get_connection("accountants")
     cursor = conn.cursor()
     cursor.execute(
-        """INSERT INTO pending_requests (account_id, request_type, amount, details)
-           VALUES (?, ?, ?, ?)""",
-        (account_id, request_type, amount, details)
+        """INSERT INTO pending_requests (account_id, request_type, amount, details, status)
+           VALUES (?, ?, ?, ?, ?)""",
+        (account_id, request_type, amount, details, status)
     )
     conn.commit()
     req_id = cursor.lastrowid
