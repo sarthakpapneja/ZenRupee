@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏦 Bank Security System & Finance Dashboard Backend
+# Bank Security System & Finance Dashboard Backend
 
 **A secure, structured backend engineered to handle banking operations, financial data processing, role-based access control, and dashboard summaries.**
 
@@ -16,7 +16,7 @@ Built with Python · Flask · SQLite
 
 ---
 
-## ✨ Overview
+## Overview
 
 This project is a powerful **Finance Data Processing and Access Control Backend** designed to serve financial records, execute complex access constraints based on user roles, and generate high-level dashboard analytics. 
 
@@ -24,13 +24,13 @@ It satisfies rigorous backend engineering requirements by enforcing strict data 
 
 ---
 
-## 🎯 Core Features & Capabilities
+## Core Features & Capabilities
 
 ### 1. Robust Role-Based Access Control (RBAC)
 The system operates on a precisely segregated permissions model:
-- **👤 Customer (Viewer):** Can only view their own dashboard data, fetch personal accounts, and initiate basic transactions securely for their own profiles.
-- **📋 Accountant (Analyst):** Has elevated access to view all financial records, review and execute pending withdrawal/transfer requests from customers, and view audit trail logs.
-- **👑 Manager (Admin):** Possesses complete CRUD capabilities. Can view all system logs, modify any user data, manage active branches, run global backend analytics, and explicitly manipulate financial records.
+- **Customer (Viewer):** Can only view their own dashboard data, fetch personal accounts, and initiate basic transactions securely for their own profiles.
+- **Accountant (Analyst):** Has elevated access to view all financial records, review and execute pending withdrawal/transfer requests from customers, and view audit trail logs.
+- **Manager (Admin):** Possesses complete CRUD capabilities. Can view all system logs, modify any user data, manage active branches, run global backend analytics, and explicitly manipulate financial records.
 
 ### 2. Advanced Financial Records Management
 Financial entities (`transactions`) are fully fleshed out with metadata:
@@ -60,7 +60,7 @@ Instead of a single monolithic database containing highly sensitive information 
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Python 3.10+
@@ -92,13 +92,13 @@ python3 server.py
 
 | Role | Username | Password |
 |------|----------|----------|
-| 👤 Customer | `john_doe` | `password123` |
-| 📋 Accountant | `acc_smith` | `password123` |
-| 👑 Manager | `mgr_admin` | `admin123` |
+| Customer | `john_doe` | `password123` |
+| Accountant | `acc_smith` | `password123` |
+| Manager | `mgr_admin` | `admin123` |
 
 ---
 
-## 📁 System Architecture
+## System Architecture
 
 ```text
 bank_security_system/
@@ -116,7 +116,7 @@ bank_security_system/
 
 ---
 
-## 📝 API Endpoint Highlights
+## API Endpoint Highlights
 
 | Method | Endpoint | Role Restriction | Capability Focus |
 |--------|----------|------|-------------|
@@ -131,7 +131,7 @@ bank_security_system/
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for more details.
 
