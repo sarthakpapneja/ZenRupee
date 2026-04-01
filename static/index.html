@@ -1189,19 +1189,88 @@
 
         // ── ALL TRANSACTIONS ──
         async function renderAllTransactions(el) {
-            el.innerHTML = `<div class="page-header"><h2>All Transactions</h2><p>Complete transaction history</p></div><div id="allTxnTable"></div>`;
+            el.innerHTML = `
+                <div class="page-header"><h2>All Transactions</h2><p>Complete transaction history</p></div>
+                <div class="table-card" style="padding:16px 20px;margin-bottom:16px">
+                    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+                        <div style="flex:1;min-width:120px">
+                            <label style="font-size:0.75rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">Type</label>
+                            <select id="filterType" style="width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--border-light);background:var(--bg-card);color:var(--text-primary);font-size:0.85rem">
+                                <option value="">All Types</option>
+                                <option value="deposit">Deposit</option>
+                                <option value="withdrawal">Withdrawal</option>
+                                <option value="transfer">Transfer</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;min-width:120px">
+                            <label style="font-size:0.75rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">Category</label>
+                            <select id="filterCategory" style="width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--border-light);background:var(--bg-card);color:var(--text-primary);font-size:0.85rem">
+                                <option value="">All Categories</option>
+                                <option value="General">General</option>
+                                <option value="Salary">Salary</option>
+                                <option value="Investment">Investment</option>
+                                <option value="Gift">Gift</option>
+                                <option value="Groceries">Groceries</option>
+                                <option value="Utilities">Utilities</option>
+                                <option value="Rent">Rent</option>
+                                <option value="Entertainment">Entertainment</option>
+                                <option value="Family">Family</option>
+                                <option value="Bill Payment">Bill Payment</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;min-width:130px">
+                            <label style="font-size:0.75rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">From Date</label>
+                            <input type="date" id="filterStartDate" style="width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--border-light);background:var(--bg-card);color:var(--text-primary);font-size:0.85rem">
+                        </div>
+                        <div style="flex:1;min-width:130px">
+                            <label style="font-size:0.75rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">To Date</label>
+                            <input type="date" id="filterEndDate" style="width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--border-light);background:var(--bg-card);color:var(--text-primary);font-size:0.85rem">
+                        </div>
+                        <button class="btn btn-primary" onclick="applyTxnFilters()" style="padding:7px 18px;font-size:0.85rem">Filter</button>
+                        <button class="btn btn-ghost" onclick="clearTxnFilters()" style="padding:7px 14px;font-size:0.85rem">Clear</button>
+                    </div>
+                </div>
+                <div id="allTxnTable"></div>
+            `;
             const txns = await api('/api/transactions/all');
             renderTransactionTable(document.getElementById('allTxnTable'), txns, `Transactions (${txns.length})`);
         }
 
+        async function applyTxnFilters() {
+            const type = document.getElementById('filterType').value;
+            const category = document.getElementById('filterCategory').value;
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+
+            const params = new URLSearchParams();
+            if (type) params.append('txn_type', type);
+            if (category) params.append('category', category);
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+
+            try {
+                const txns = await api(`/api/transactions?${params.toString()}`);
+                renderTransactionTable(document.getElementById('allTxnTable'), txns, `Filtered Results (${txns.length})`);
+            } catch(e) { showToast(e.message, 'error'); }
+        }
+
+        function clearTxnFilters() {
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterCategory').value = '';
+            document.getElementById('filterStartDate').value = '';
+            document.getElementById('filterEndDate').value = '';
+            navigate('all-txns');
+        }
+
         function renderTransactionTable(container, txns, title) {
             if (!txns.length) {
-                container.innerHTML = '<div class="empty-state"><div class="icon">—</div><p>No transactions</p></div>';
+                container.innerHTML = '<div class="empty-state"><div class="icon">—</div><p>No transactions found</p></div>';
                 return;
             }
+            const isManager = currentUser && currentUser.role === 'manager';
             container.innerHTML = `
         <div class="table-card"><div class="table-header"><h3>${title}</h3></div>
-        <table class="data-table"><thead><tr><th>ID</th><th>Acc #</th><th>Type</th><th>Category</th><th>Amount</th><th>Date</th><th>Description</th><th>Status</th><th></th></tr></thead>
+        <table class="data-table"><thead><tr><th>ID</th><th>Acc #</th><th>Type</th><th>Category</th><th>Amount</th><th>Date</th><th>Description</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody>${txns.map(t => `<tr>
             <td>#${t.txn_id}</td>
             <td>#${t.account_id}</td>
@@ -1211,9 +1280,70 @@
             <td style="color:var(--text-muted);font-size:0.82rem">${t.timestamp}</td>
             <td style="font-size:0.85rem">${t.description}</td>
             <td><span class="badge badge-${t.status === 'completed' ? 'green' : 'yellow'}">${t.status}</span></td>
-            <td><button onclick="viewReceipt(${t.txn_id})" class="btn" style="padding:4px 10px;font-size:0.75rem" title="View Receipt"></button></td>
+            <td style="white-space:nowrap">
+                <button onclick="viewReceipt(${t.txn_id})" class="btn btn-sm btn-ghost" style="padding:3px 8px;font-size:0.73rem" title="View Receipt">📄</button>
+                ${isManager ? `<button onclick="showEditTxnModal(${t.txn_id}, '${t.category || 'General'}', '${(t.description || '').replace(/'/g, "\\'")}', ${t.amount}, '${t.txn_type}')" class="btn btn-sm btn-ghost" style="padding:3px 8px;font-size:0.73rem" title="Edit">✏️</button>
+                <button onclick="deleteTxn(${t.txn_id})" class="btn btn-sm btn-ghost" style="padding:3px 8px;font-size:0.73rem;color:#ef4444" title="Delete">🗑</button>` : ''}
+            </td>
         </tr>`).join('')}</tbody></table></div>
     `;
+        }
+
+        function showEditTxnModal(txnId, category, description, amount, txnType) {
+            document.getElementById('modalContent').innerHTML = `
+                <h3 style="margin-bottom:16px">Edit Transaction #${txnId}</h3>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="editTxnCategory" style="width:100%">
+                        ${['General','Salary','Investment','Gift','Groceries','Utilities','Rent','Entertainment','Family','Bill Payment'].map(c => `<option value="${c}" ${c === category ? 'selected' : ''}>${c}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="editTxnDesc" value="${description}" style="width:100%">
+                </div>
+                <div class="form-group">
+                    <label>Amount (₹)</label>
+                    <input type="number" id="editTxnAmount" value="${amount}" step="0.01" style="width:100%">
+                </div>
+                <div class="form-group">
+                    <label>Type</label>
+                    <select id="editTxnType" style="width:100%">
+                        <option value="deposit" ${txnType === 'deposit' ? 'selected' : ''}>Deposit</option>
+                        <option value="withdrawal" ${txnType === 'withdrawal' ? 'selected' : ''}>Withdrawal</option>
+                        <option value="transfer" ${txnType === 'transfer' ? 'selected' : ''}>Transfer</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="doEditTxn(${txnId})" style="width:100%">Save Changes</button>
+                <button class="btn btn-ghost" onclick="closeModal()" style="width:100%;margin-top:8px">Cancel</button>
+            `;
+            document.getElementById('modalOverlay').classList.add('visible');
+        }
+
+        async function doEditTxn(txnId) {
+            try {
+                await api(`/api/transactions/${txnId}`, {
+                    method: 'PUT',
+                    body: {
+                        category: document.getElementById('editTxnCategory').value,
+                        description: document.getElementById('editTxnDesc').value,
+                        amount: parseFloat(document.getElementById('editTxnAmount').value),
+                        txn_type: document.getElementById('editTxnType').value,
+                    }
+                });
+                closeModal();
+                showToast('Transaction updated successfully');
+                navigate('all-txns');
+            } catch(e) { showToast(e.message, 'error'); }
+        }
+
+        async function deleteTxn(txnId) {
+            if (!confirm(`Are you sure you want to delete Transaction #${txnId}? This action cannot be undone.`)) return;
+            try {
+                await api(`/api/transactions/${txnId}`, { method: 'DELETE' });
+                showToast('Transaction deleted');
+                navigate('all-txns');
+            } catch(e) { showToast(e.message, 'error'); }
         }
 
         // ── AUDIT LOG ──
