@@ -1,108 +1,79 @@
-# ZenRupee API Reference
+# ZenRupee API Reference (2026)
 
 This document provides a comprehensive list of all API endpoints available in the ZenRupee platform.
 
-## Authentication
+## 🔑 Authentication & Session
+| Method | Endpoint | Role | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/login` | Public | Authenticates user; returns session cookie. |
+| `POST` | `/api/logout` | All | Invalidates current session. |
+| `GET` | `/api/me` | All | Returns profile of current logged-in user. |
+| `POST` | `/api/change-password` | All | Updates user password (requires old password). |
 
-### [POST] /api/login
-Authenticates a user and starts a session.
-- **Request Body**: `{"username": "...", "password": "..."}`
-- **Response**: `{"success": true, "user": {...}}`
+## 🏦 Account & Transaction Management
+| Method | Endpoint | Role | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/accounts` | Customer | Lists all accounts owned by current customer. |
+| `GET` | `/api/accounts` | Staff | Lists all accounts in the system (all customers). |
+| `GET` | `/api/accounts/<id>` | All | Fetches specific account details. |
+| `GET` | `/api/accounts/lookup/<no>`| All | Finds account details by account number. |
+| `GET` | `/api/accounts/<id>/statement`| All | Generates HTML Mini-Statement. |
+| `POST` | `/api/deposit` | Staff | Direct deposit into a customer account. |
+| `POST` | `/api/withdraw` | Staff | Direct withdrawal from a customer account. |
+| `POST` | `/api/transfer` | Customer | Fund transfer between accounts. |
+| `GET` | `/api/transactions` | All | Lists transactions (filtered by query params). |
+| `GET` | `/api/transactions/all` | Staff | Full system transaction history. |
+| `GET` | `/api/transactions/<id>/receipt`| All | Generates HTML Transaction Receipt. |
+| `DELETE`| `/api/transactions/<id>` | Manager | Deletes a transaction record. |
 
-### [POST] /api/logout
-Ends the current session.
-- **Role**: Any logged-in user
-- **Response**: `{"success": true}`
+## 💳 Credit Cards
+| Method | Endpoint | Role | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/credit_cards` | All | Lists active credit cards. |
+| `POST` | `/api/credit_cards/apply` | Customer | Requests a new credit card from management. |
+| `POST` | `/api/credit_cards/pay` | Customer | Pays off credit card balance from bank account. |
+| `POST` | `/api/credit_cards/charge` | Customer | Simulate a charge on the credit card. |
 
-### [GET] /api/me
-Returns current session user details.
-- **Role**: Any logged-in user
-- **Response**: `{"user_id": 1, "username": "...", "role": "..."}`
+## 💰 Loans
+| Method | Endpoint | Role | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/active_loans` | Customer | Lists current active loans for user. |
+| `GET` | `/api/loans` | Staff | Lists all pending/active loan applications. |
+| `POST` | `/api/loans/apply` | Customer | Submits a new loan application. |
+| `POST` | `/api/loans/<id>/accountant-review`| Accountant | Marks loan for manager approval. |
+| `POST` | `/api/loans/<id>/approve` | Manager | Final approval and disbursement of loan funds. |
+| `POST` | `/api/loan/pay` | Customer | Pays a standard EMI for a loan. |
 
----
+## 🎫 Support & Tickets
+| Method | Endpoint | Role | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/tickets` | All | Lists support tickets (Own if Customer, All if Staff). |
+| `POST` | `/api/tickets` | Customer | Opens a new support ticket. |
+| `GET` | `/api/tickets/<id>/messages`| All | Fetches conversation history for a ticket. |
+| `POST` | `/api/tickets/<id>/messages`| All | Adds a reply to a support ticket. |
+| `POST` | `/api/tickets/<id>/close` | Staff | Closes a resolved support ticket. |
 
-## Customer & Account Operations
+## 👥 User & Staff Management
+| Method | Endpoint | Role | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/users` | Staff | Lists all system users. |
+| `GET` | `/api/users/<id>/details` | Staff | Deep-dive profile for a specific customer. |
+| `POST` | `/api/users/create` | Manager | Instantly create a new user/staff member. |
+| `POST` | `/api/users/request-create`| Accountant | Submit user for manager approval. |
+| `POST` | `/api/users/<id>/toggle` | Staff | Enable/Disable user account. |
+| `POST` | `/api/users/<id>/unlock` | Staff | Manually unlock account (after failed logins). |
+| `DELETE`| `/api/users/<id>` | Manager | Permanently deletes a user. |
 
-### [GET] /api/accounts
-Lists accounts. Customers see their own; Staff see all.
-- **Role**: Any logged-in user
-- **Response**: List of account objects.
-
-### [GET] /api/accounts/<account_id>
-Returns detailed information for a specific account.
-- **Response**: Account object.
-
-### [GET] /api/accounts/lookup/<account_id>
-Public lookup (for transfers) showing only recipient name.
-- **Response**: `{"account_id": 1, "customer_name": "..."}`
-
-### [GET] /api/accounts/<account_id>/transactions
-Fetches transaction history for an account.
-- **Response**: List of transaction objects.
-
----
-
-## Financial Transactions
-
-### [POST] /api/deposit
-Deposits money into an account.
-- **Roles**: Customer, Manager
-- **Request Body**: `{"account_id": 1, "amount": 1000, "category": "..."}`
-
-### [POST] /api/withdraw
-Withdraws money. Amounts ≥ ₹5,000 require Accountant approval.
-- **Roles**: Customer, Manager
-- **Request Body**: `{"account_id": 1, "amount": 1000}`
-
-### [POST] /api/transfer
-Transfers funds between accounts. Amounts ≥ ₹5,000 require approval.
-- **Roles**: Customer, Manager
-- **Request Body**: `{"src_id": 1, "dst_id": 2, "amount": 1000}`
-
----
-
-## Staff & Management
-
-### [GET] /api/requests
-Lists pending approval requests (withdrawals, transfers, user creation).
-- **Roles**: Accountant, Manager
-
-### [POST] /api/requests/<request_id>/process
-Approves or rejects a pending request.
-- **Roles**: Accountant, Manager
-- **Request Body**: `{"action": "approve" | "reject"}`
-- *Note: User creation requests can only be processed by Managers.*
-
-### [POST] /api/users/request-create
-Accountant submits a new user for Manager approval.
-- **Role**: Accountant
-- **Request Body**: `{"username": "...", "password": "...", "role": "customer", ...}`
-
-### [POST] /api/users/create
-Direct user creation by a manager.
-- **Role**: Manager
-- **Request Body**: `{"username": "...", "password": "...", "role": "..."}`
-
-### [GET] /api/dashboard/summary
-Returns financial metrics and trends for the dashboard.
-- **Role**: Any logged-in user (content adapts to role)
-
-### [GET] /api/report
-Generates a full bank balance and statistics report.
-- **Role**: Manager
+## 📍 Meta & System
+| Method | Endpoint | Role | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/dashboard/summary` | All | Returns aggregate stats for dashboard UI. |
+| `GET` | `/api/audit-log` | Manager | Fetches full system audit trails. |
+| `GET` | `/api/system-logs` | Staff | Fetches technical system logs (logins, IP, etc). |
+| `GET` | `/api/branches` | All | Lists bank branch locations and managers. |
+| `POST` | `/api/branches` | Manager | Creates a new physical bank branch. |
+| `GET` | `/api/alerts` | Customer | Fetches unread notifications/alerts. |
+| `POST` | `/api/alerts/<id>/read` | Customer | Marks a specific alert as read. |
 
 ---
-
-## Security & Logs
-
-### [GET] /api/alerts
-Fetches unread security alerts for the current user.
-- **Response**: List of alerts.
-
-### [GET] /api/audit-log
-Fetches the global audit trail of all sensitive actions.
-- **Role**: Accountant, Manager
-
-### [GET] /api/system-logs
-Fetches chronological system events and login logs.
-- **Role**: Manager
+*Note: All endpoints require a valid session cookie. Endpoints marked with specific roles require that role in the session.*
