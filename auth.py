@@ -16,7 +16,7 @@ import db_manager
 
 def hash_password(password: str) -> str:
     """Hash a password with SHA-256 + salt."""
-    salt = "bank_security_salt_2024"
+    salt = "bank_security_salt_2026"
     return hashlib.sha256(f"{salt}{password}".encode()).hexdigest()
 
 

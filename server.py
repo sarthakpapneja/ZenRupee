@@ -13,7 +13,7 @@ import db_manager
 from auth import hash_password, verify_password
 
 app = Flask(__name__, static_folder="static")
-app.secret_key = "bank_security_system_secret_key_2024"
+app.secret_key = "bank_security_system_secret_key_2026"
 
 
 # ─────────────────────────────────────────────

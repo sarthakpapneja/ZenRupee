@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: ZenRupee (Aegis Nexus Bank) API
+  title: ZenRupee API
   description: Comprehensive API documentation for the ZenRupee core banking and security platform.
   version: 1.0.0
 servers:

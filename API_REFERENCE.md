@@ -1,6 +1,6 @@
 # ZenRupee API Reference
 
-This document provides a comprehensive list of all API endpoints available in the ZenRupee (Aegis Nexus Bank) platform.
+This document provides a comprehensive list of all API endpoints available in the ZenRupee platform.
 
 ## Authentication
 
