@@ -105,6 +105,10 @@ python3 server.py
 | **GET**  | `/api/dashboard/summary` | *All* (Dynamic scoping) | Calculates aggregate net margins, trends, and localized categorical arrays. |
 | **GET**  | `/api/transactions` | *All* | Retrieves records with optional `category` grouping. |
 | **POST** | `/api/loan/pay` | Customer | Analyzes explicit account limits, sweeps EMI funds, evaluates interest arrays, and conditionally halts loans upon maturity completion. |
+| **GET**  | `/api/credit_cards` | Customer | Fetches all credit cards linked to the user's accounts. |
+| **POST** | `/api/credit_cards/apply` | Customer | Submits a credit card application tied to a savings/checking account. |
+| **POST** | `/api/credit_cards/charge` | Customer | Simulates a purchase against an available credit limit. |
+| **POST** | `/api/credit_cards/pay` | Customer | Pays outstanding credit card balance from a linked bank account. |
 | **POST** | `/api/transactions` | Manager | Explicitly inserts new unbuffered records natively. |
 | **PUT**  | `/api/transactions/:id` | Manager | Updates categorizations and financial values post-factum. |
 | **DELETE**| `/api/transactions/:id` | Manager | Forces hard removals against the schema mapping. |
