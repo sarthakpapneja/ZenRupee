@@ -22,6 +22,10 @@ ZenRupee is a robust **Finance Data Processing and Access Control Platform** des
 
 It satisfies rigorous backend engineering standards by enforcing rigid data segregation, providing comprehensive financial record CRUD capabilities, supporting multi-layered Role-Based Access Control (RBAC), and resolving structural operations safely using lightweight SQL transactions.
 
+**Role Mapping Note:** Customer maps to Viewer, Accountant maps to Analyst, Manager maps to Admin.
+
+**Frontend Note:** A lightweight static frontend is included for demo purposes; the backend APIs are fully functional independently.
+
 ---
 
 ## Technical Design & Architecture

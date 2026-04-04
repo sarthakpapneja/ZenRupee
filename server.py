@@ -12,8 +12,12 @@ from functools import wraps
 import db_manager
 from auth import hash_password, verify_password
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 app = Flask(__name__, static_folder="static")
-app.secret_key = "bank_security_system_secret_key_2026"
+app.secret_key = os.environ.get("SECRET_KEY", "bank_security_system_secret_key_2026")
 
 
 # ─────────────────────────────────────────────
