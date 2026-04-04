@@ -1682,26 +1682,13 @@
                         <div class="form-group"><label>Address</label><input type="text" id="profAddress" value="${p.address || ''}" placeholder="Your address"></div>
                         <button class="btn btn-primary" onclick="saveProfile()" style="width:100%">Save ProfileDetails</button>
                     </div>
-                    <div class="modal" style="width:100%; max-width:100%; text-align:center;">
-                        <h3 style="margin-top:0;">My UPI QR Code</h3>
-                        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom: 24px;">Upload a QR code (e.g. from PhonePe, GPay) so others can pay you via UPI</p>
-                        
-                        <div id="qrPreviewArea" style="margin-bottom: 20px; ${qrSrc ? '' : 'display:none;'}">
-                            <img id="qrDisplay" src="${qrSrc}" style="max-width: 200px; border-radius: 8px; border: 1px solid var(--border-light); padding: 5px;" />
-                        </div>
-                        
-                        <input type="file" id="qrFileInput" accept="image/*" style="display:none;" onchange="handleQRSelect(event)">
-                        <button class="btn btn-primary" onclick="document.getElementById('qrFileInput').click()" style="width:100%; margin-bottom: 10px;">Select UPI QR Image</button>
-                        <button class="btn btn-success" id="qrSaveBtn" onclick="saveQRCode()" style="width:100%; display:none;">Upload QR Code</button>
-                    </div>
-                    
                     ${p.role === 'customer' ? `
-                        <div style="margin-top:24px; padding-top:20px; border-top:1px dashed var(--border)">
-                            <h4 style="margin-bottom:12px">Payment QR Codes</h4>
-                            <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px">Manage QR codes for your accounts to receive quick payments.</p>
-                            <div id="profileQrList" style="display:grid;gap:10px"></div>
-                        </div>
-                    ` : ''}
+                    <div class="modal" style="width:100%; max-width:100%;">
+                        <h3 style="margin-top:0; margin-bottom:12px">Payment QR Codes</h3>
+                        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom: 24px;">Manage QR codes for your accounts to receive quick payments.</p>
+                        <div id="profileQrList" style="display:grid;gap:10px"></div>
+                    </div>
+                    ` : '<div></div>'}
                 </div>
             `;
             if (p.role === 'customer') {
