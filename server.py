@@ -12,12 +12,10 @@ from functools import wraps
 import db_manager
 from auth import hash_password, verify_password
 
+import os
 from dotenv import load_dotenv
-
 load_dotenv()
-
-app = Flask(__name__, static_folder="static")
-app.secret_key = os.environ.get("SECRET_KEY", "fallback_dev_key")
+app.secret_key = os.getenv("SECRET_KEY", "dev_fallback_key")
 
 
 # ─────────────────────────────────────────────

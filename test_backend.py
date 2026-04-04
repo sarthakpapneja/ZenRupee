@@ -16,8 +16,6 @@ def test_dashboard_requires_auth(client):
     assert res.status_code == 401
 
 def test_customer_cannot_delete_transaction(client):
-    res_login = client.post("/api/login", json={"username": "john_doe", "password": "password123"})
-    assert res_login.status_code == 200
-    
+    client.post("/api/login", json={"username": "john_doe", "password": "password123"})
     res = client.delete("/api/transactions/1")
     assert res.status_code == 403
