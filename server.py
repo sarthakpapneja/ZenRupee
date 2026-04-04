@@ -15,6 +15,7 @@ from auth import hash_password, verify_password
 import os
 from dotenv import load_dotenv
 load_dotenv()
+app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev_fallback_key")
 
 
